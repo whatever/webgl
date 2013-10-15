@@ -1,6 +1,10 @@
 var app = function (_canvasId) {
   var _canvas = document.getElementById(_canvasId);
-  var _gl = _canvas.getContext("webgl");
+  var _gl = _canvas.getContext("webkit-3d");
+
+  if (!_gl) {
+    alert("!");
+  }
 
   var _triangleVbo = {
     vbuffer : undefined,
