@@ -1,5 +1,4 @@
 var app = function (_canvasId) {
-
   var _canvas = document.getElementById(_canvasId);
   var _gl = _canvas.getContext("webgl");
 
