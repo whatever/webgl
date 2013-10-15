@@ -17,14 +17,15 @@ var webgl = {
    * @return {array} a 16-element array representing a matrix
    */
   perspectiveMatrix : function (m) {
-    m.fieldOfView = 30.0;
-    m.aspectRatio = canvas.width / canvas.height;
-    m.nearPlane = 1.0;
-    m.farPlane = 10000.0;
-    m.top = nearPlane * Math.tan(fieldOfView * Math.PI / 360.0);
-    m.bottom = -top;
-    m.right = top * aspectRatio;
-    m.left = -right;
+    m = m || {};
+    m.fieldOfView = m.fieldOfView || 30.0;
+    m.aspectRatio = m.aspectRatio || 1;
+    m.nearPlane = m.nearPlane || 1.0;
+    m.farPlane = m.farPlane || 10000.0;
+    m.top = m.top || (m.nearPlane * Math.tan(m.fieldOfView * Math.PI / 360.0));
+    m.bottom = -m.top;
+    m.right = m.top * m.aspectRatio;
+    m.left = -m.right;
 
     var a = (m.right + m.left) / (m.right - m.left);
     var b = (m.top + m.bottom) / (m.top - m.bottom);
@@ -40,6 +41,4 @@ var webgl = {
           0, 0, -1, 0
     ];
   }
-
-
 };
