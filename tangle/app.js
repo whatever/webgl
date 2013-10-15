@@ -1,10 +1,6 @@
 var app = function (_canvasId) {
   var _canvas = document.getElementById(_canvasId);
-  var _gl = _canvas.getContext("webkit-3d");
-
-  if (!_gl) {
-    alert("!");
-  }
+  var _gl = _canvas.getContext("webgl");
 
   var _triangleVbo = {
     vbuffer : undefined,
@@ -24,11 +20,28 @@ var app = function (_canvasId) {
 
       // Initialize VBO
       _triangleVbo.vbuffer = _gl.createBuffer();
-      _triangleVbo.vertices = new Float32Array([ 0.0, 1.0, 4.0, -1.0, -1.0, 4.0, 1.0, -1.0, 4.0 ]);
+      _triangleVbo.vertices = [];
+      var v = [];
+      for (var i = 0; i < 400; i++) {
+        var x = -.5 + (i % 20)/19;
+        var y = -.5 + (Math.floor(i / 20))/19;
+        v.push(x);
+        v.push(y);
+        v.push(1 + Math.random());
+      }
+      _triangleVbo.vertices = new Float32Array(v);
       _gl.bindBuffer(_gl.ARRAY_BUFFER, _triangleVbo.vbuffer);
       _gl.bufferData(_gl.ARRAY_BUFFER, _triangleVbo.vertices, _gl.STATIC_DRAW);
       _triangleVbo.cbuffer = _gl.createBuffer();
-      _triangleVbo.colors = new Float32Array([ 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0 ]);
+      _triangleVbo.colors = [];
+      var c = [];
+      for (var i = 0; i < 400; i++) {
+        c.push(.2);
+        c.push(.2);
+        c.push(.9);
+        c.push(1);
+      }
+      _triangleVbo.colors = new Float32Array(c);
       _gl.bindBuffer(_gl.ARRAY_BUFFER, _triangleVbo.cbuffer);
       _gl.bufferData(_gl.ARRAY_BUFFER, _triangleVbo.colors, _gl.STATIC_DRAW);
     },
@@ -97,20 +110,28 @@ var app = function (_canvasId) {
     _gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
 
     var perspectiveMatrix = webgl.perspectiveMatrix({
-      fieldOfView : 30.0,
+      fieldOfView : 20.0,
       aspectRatio : _canvas.width / _canvas.height,
-      nearPlane : 1.0,
+      nearPlane : 0,
       farPlane : 10000.0
     });
 
     // Construct model-view matrix
     var t = getElapsedSeconds() / 1.5;
     var modelViewMatrix = [
-      Math.cos(t), -Math.sin(t), 0, 0,
-      -Math.sin(t), Math.cos(t), 0, 0,
+      Math.cos(t), 0, -Math.sin(t), 0,
+      0, 1, 0, 0,
+      -Math.sin(t), 0, Math.cos(t), 0, 
+      0, 0, 0, 1
+    ];
+    /*
+    modelViewMatrix = [
+      1, 0, 0, 0,
+      0, 1, 0, 0,
       0, 0, 1, 0,
       0, 0, 0, 1
     ];
+   */
 
     // Apply shader
     _gl.useProgram(_passShaderProg);
@@ -136,6 +157,7 @@ var app = function (_canvasId) {
     _gl.uniformMatrix4fv(uPerspectiveMatrix, false, new Float32Array(modelViewMatrix));
  
     // Draw
-    _gl.drawArrays(_gl.TRIANGLES, 0, 3);
+    _gl.lineWidth(1.);
+    _gl.drawArrays(_gl.LINE_STRIP, 0, 400);
   }
 }
