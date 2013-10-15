@@ -6,7 +6,8 @@ Lessons from:
 * Lessons : webpages demoing basic webgl stuff
   * `/lesson-01/` : Draws a triangle with a simple shader
   * `/lesson-02/` : Draws a triangle with colored vertices. Enables alpha blending.
-  * `/lesson-03/` : ???
+  * `/lesson-03/` : Draw a rotating triangle.
+  * `/lesson-04/` : ???
 * Demos : Demos and samples that I think are improvements on existing ones.
   * `/min-2d/` : Minimal 2d WebGL example
   * `/min/` : Minimal WebGL example
