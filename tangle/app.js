@@ -22,12 +22,18 @@ var app = function (_canvasId) {
       _triangleVbo.vbuffer = _gl.createBuffer();
       _triangleVbo.vertices = [];
       var v = [];
+      var pos = { x : 0, y : 0, z : 0 };
       for (var i = 0; i < 400; i++) {
         var x = -.5 + (i % 20)/19;
         var y = -.5 + (Math.floor(i / 20))/19;
-        v.push(x);
-        v.push(y);
-        v.push(1 + Math.random());
+        pos = {
+          x : x + Math.cos(4 * pos.x) + Math.random()/3,
+          y : y + Math.sin(2.5 * pos.y),
+          z : 1 + 4 * Math.random()
+        };
+        v.push(pos.x);
+        v.push(pos.y);
+        v.push(pos.z);
       }
       _triangleVbo.vertices = new Float32Array(v);
       _gl.bindBuffer(_gl.ARRAY_BUFFER, _triangleVbo.vbuffer);
@@ -35,10 +41,10 @@ var app = function (_canvasId) {
       _triangleVbo.cbuffer = _gl.createBuffer();
       _triangleVbo.colors = [];
       var c = [];
-      for (var i = 0; i < 400; i++) {
-        c.push(.2);
-        c.push(.2);
-        c.push(.9);
+      for (var i = 0; i < 900; i++) {
+        c.push(i/999);
+        c.push(i/999);
+        c.push(i/999);
         c.push(1);
       }
       _triangleVbo.colors = new Float32Array(c);
@@ -110,10 +116,10 @@ var app = function (_canvasId) {
     _gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
 
     var perspectiveMatrix = webgl.perspectiveMatrix({
-      fieldOfView : 20.0,
+      fieldOfView : 60.0,
       aspectRatio : _canvas.width / _canvas.height,
       nearPlane : 0,
-      farPlane : 10000.0
+      farPlane : 100.0
     });
 
     // Construct model-view matrix
@@ -121,7 +127,7 @@ var app = function (_canvasId) {
     var modelViewMatrix = [
       Math.cos(t), 0, -Math.sin(t), 0,
       0, 1, 0, 0,
-      -Math.sin(t), 0, Math.cos(t), 0, 
+      Math.sin(t), 0, Math.cos(t), 0,
       0, 0, 0, 1
     ];
     /*
@@ -131,7 +137,7 @@ var app = function (_canvasId) {
       0, 0, 1, 0,
       0, 0, 0, 1
     ];
-   */
+   //*/
 
     // Apply shader
     _gl.useProgram(_passShaderProg);
