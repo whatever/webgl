@@ -6,13 +6,30 @@ var app = function (_canvasId) {
   var _mvMatrix;
 
   var _texture = _gl.createTexture();
-  var _img = new Image();
-  _img.onload = function () {
-    _gl.bindTexture(_gl.TEXTURE_2D, _texture);
+  var _textures = [ _gl.createTexture(), _gl.createTexture(), _gl.createTexture() ];
+  var _img = [ new Image(), new Image(), new Image() ];
+
+  _img[0].onload = function () {
     _gl.pixelStorei(_gl.UNPACK_FLIP_Y_WEBGL, true);
-    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img);
+    _gl.bindTexture(_gl.TEXTURE_2D, _texture[0]);
+    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img[0]);
     _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.NEAREST);
     _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.NEAREST);
+  }
+  _img[1].onload = function () {
+    _gl.pixelStorei(_gl.UNPACK_FLIP_Y_WEBGL, true);
+    _gl.bindTexture(_gl.TEXTURE_2D, _texture[1]);
+    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img[1]);
+    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
+    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR);
+    _gl.bindTexture(_gl.TEXTURE_2D, null);
+  }
+  _img[2].onload = function () {
+    _gl.pixelStorei(_gl.UNPACK_FLIP_Y_WEBGL, true);
+    _gl.bindTexture(_gl.TEXTURE_2D, _texture[2]);
+    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img[2]);
+    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
+    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR);
     _gl.bindTexture(_gl.TEXTURE_2D, null);
   }
   _img.src = "texture.png";

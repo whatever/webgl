@@ -44,7 +44,7 @@ var app = function (_canvasId) {
       for (var i = 0; i < 900; i++) {
         c.push(i/999);
         c.push(i/999);
-        c.push(i/999);
+        c.push(i/199);
         c.push(1);
       }
       _triangleVbo.colors = new Float32Array(c);
