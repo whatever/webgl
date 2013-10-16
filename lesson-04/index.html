@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Lesson 04</title>
+    <title>04 : vbo</title>
     <!-- Vertex Shader -->
     <script type="x-shader/x-vertex" id="pass-vert">
       attribute vec3 vertexPosition;
       attribute vec4 vertexColor;
+
       uniform mat4 modelViewMatrix;
       uniform mat4 perspectiveMatrix;
+
       varying vec4 vColor;
+
       void main() {
         gl_Position = perspectiveMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);
         vColor = vertexColor;

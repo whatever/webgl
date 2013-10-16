@@ -1,16 +1,17 @@
 var app = function (_canvasId) {
   var _canvas = document.getElementById(_canvasId);
-  var _gl = _canvas.getContext("webkit-3d");
+  var _gl = _canvas.getContext("webgl");
 
-  if (!_gl) {
-    alert("!");
-  }
+  var _pMatrix;
+  var _mvMatrix;
 
-  var _triangleVbo = {
-    vbuffer : undefined,
-    vertices : undefined,
-    cbuffer : undefined,
-    colors : undefined
+  var _cubeVbo = {
+    colors : [],
+    positions : [],
+    indices : [],
+    cbuffer : _gl.createBuffer(),
+    vbuffer : _gl.createBuffer(),
+    ibuffer : _gl.createBuffer()
   };
 
   var _passShaderProg = undefined;
@@ -22,15 +23,77 @@ var app = function (_canvasId) {
       // Setup
       setup();
 
-      // Initialize VBO
-      _triangleVbo.vbuffer = _gl.createBuffer();
-      _triangleVbo.vertices = new Float32Array([ 0.0, 1.0, 4.0, -1.0, -1.0, 4.0, 1.0, -1.0, 4.0 ]);
-      _gl.bindBuffer(_gl.ARRAY_BUFFER, _triangleVbo.vbuffer);
-      _gl.bufferData(_gl.ARRAY_BUFFER, _triangleVbo.vertices, _gl.STATIC_DRAW);
-      _triangleVbo.cbuffer = _gl.createBuffer();
-      _triangleVbo.colors = new Float32Array([ 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0 ]);
-      _gl.bindBuffer(_gl.ARRAY_BUFFER, _triangleVbo.cbuffer);
-      _gl.bufferData(_gl.ARRAY_BUFFER, _triangleVbo.colors, _gl.STATIC_DRAW);
+      // vertex buffer
+      _cubeVbo.positions = new Float32Array([
+        -1.0, -1.0,  1.0,
+        1.0, -1.0,  1.0,
+        1.0,  1.0,  1.0,
+        -1.0,  1.0,  1.0,
+        -1.0, -1.0, -1.0,
+        -1.0,  1.0, -1.0,
+        1.0,  1.0, -1.0,
+        1.0, -1.0, -1.0,
+        -1.0,  1.0, -1.0,
+        -1.0,  1.0,  1.0,
+        1.0,  1.0,  1.0,
+        1.0,  1.0, -1.0,
+        -1.0, -1.0, -1.0,
+        1.0, -1.0, -1.0,
+        1.0, -1.0,  1.0,
+        -1.0, -1.0,  1.0,
+        1.0, -1.0, -1.0,
+        1.0,  1.0, -1.0,
+        1.0,  1.0,  1.0,
+        1.0, -1.0,  1.0,
+        -1.0, -1.0, -1.0,
+        -1.0, -1.0,  1.0,
+        -1.0,  1.0,  1.0,
+        -1.0,  1.0, -1.0
+      ]);
+      _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.vbuffer);
+      _gl.bufferData(_gl.ARRAY_BUFFER, _cubeVbo.positions, _gl.STATIC_DRAW);
+
+      // color buffer
+      _cubeVbo.colors = new Float32Array([
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1
+      ]);
+      _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.cbuffer);
+      _gl.bufferData(_gl.ARRAY_BUFFER, _cubeVbo.colors, _gl.STATIC_DRAW);
+
+      // index buffer
+      _cubeVbo.indices = new Uint16Array([
+        0, 1, 2,      0, 2, 3,    // Front face
+        4, 5, 6,      4, 6, 7,    // Back face
+        8, 9, 10,     8, 10, 11,  // Top face
+        12, 13, 14,   12, 14, 15, // Bottom face
+        16, 17, 18,   16, 18, 19, // Right face
+        20, 21, 22,   20, 22, 23  // Left face
+      ]);
+      _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, _cubeVbo.ibuffer);
+      _gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, _cubeVbo.indices, _gl.STATIC_DRAW);
     },
     loop : loop,
     print : function () {
@@ -78,8 +141,6 @@ var app = function (_canvasId) {
     // Depth and blending
     _gl.enable(_gl.DEPTH_TEST);
     _gl.enable(_gl.BLEND);
-    _gl.depthFunc(_gl.LEQUAL);
-    _gl.blendFunc(_gl.SRC_ALPHA, _gl.ONE);
   }
 
   /**
@@ -94,22 +155,19 @@ var app = function (_canvasId) {
    * @return {undefined} undefined
    */
   function draw() {
+    _gl.viewport(0, 0, _canvas.width, _canvas.height);
     _gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
 
-    var perspectiveMatrix = webgl.perspectiveMatrix({
-      fieldOfView : 30.0,
-      aspectRatio : _canvas.width / _canvas.height,
-      nearPlane : 1.0,
-      farPlane : 10000.0
-    });
-
-    // Construct model-view matrix
     var t = getElapsedSeconds() / 1.5;
-    var modelViewMatrix = [
-      Math.cos(t), -Math.sin(t), 0, 0,
-      -Math.sin(t), Math.cos(t), 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1
+
+
+    _pMatrix = webgl.perspectiveMatrix();
+
+    _mvMatrix = [
+      Math.cos(t), 0, -Math.sin(t), 0,
+      0, 1, 0, 0,
+      Math.sin(t), 0, Math.cos(t), 0,
+      0, 0, 9, 1
     ];
 
     // Apply shader
@@ -123,19 +181,22 @@ var app = function (_canvasId) {
     var vertexCol = _gl.getAttribLocation(_passShaderProg, "vertexColor");
     _gl.enableVertexAttribArray(vertexCol);
 
-    _gl.bindBuffer(_gl.ARRAY_BUFFER, _triangleVbo.vbuffer);
+    _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.vbuffer);
     _gl.vertexAttribPointer(vertexPos, 3.0, _gl.FLOAT, false, 0, 0);
 
-    _gl.bindBuffer(_gl.ARRAY_BUFFER, _triangleVbo.cbuffer);
+    _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.cbuffer);
     _gl.vertexAttribPointer(vertexCol, 4.0, _gl.FLOAT, false, 0, 0);
 
     var uModelViewMatrix = _gl.getUniformLocation(_passShaderProg, "modelViewMatrix");
     var uPerspectiveMatrix = _gl.getUniformLocation(_passShaderProg, "perspectiveMatrix");
 
-    _gl.uniformMatrix4fv(uModelViewMatrix, false, new Float32Array(perspectiveMatrix));
-    _gl.uniformMatrix4fv(uPerspectiveMatrix, false, new Float32Array(modelViewMatrix));
- 
-    // Draw
-    _gl.drawArrays(_gl.TRIANGLES, 0, 3);
+    if(!(uModelViewMatrix && uPerspectiveMatrix))
+      console.log("okay");
+
+    _gl.uniformMatrix4fv(uPerspectiveMatrix, false, new Float32Array(_pMatrix));
+    _gl.uniformMatrix4fv(uModelViewMatrix, false, new Float32Array(_mvMatrix));
+
+    _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, _cubeVbo.ibuffer);
+    _gl.drawElements(_gl.TRIANGLES, 36, _gl.UNSIGNED_SHORT, 0);
   }
 }
