@@ -5,13 +5,27 @@ var app = function (_canvasId) {
   var _pMatrix;
   var _mvMatrix;
 
+  var _texture = _gl.createTexture();
+  var _img = new Image();
+  _img.onload = function () {
+    _gl.bindTexture(_gl.TEXTURE_2D, _texture);
+    _gl.pixelStorei(_gl.UNPACK_FLIP_Y_WEBGL, true);
+    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img);
+    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.NEAREST);
+    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.NEAREST);
+    _gl.bindTexture(_gl.TEXTURE_2D, null);
+  }
+  _img.src = "texture.png";
+
   var _cubeVbo = {
     colors : [],
     positions : [],
     indices : [],
+    texCoords : [],
     cbuffer : _gl.createBuffer(),
     vbuffer : _gl.createBuffer(),
-    ibuffer : _gl.createBuffer()
+    ibuffer : _gl.createBuffer(),
+    tbuffer : _gl.createBuffer()
   };
 
   var _passShaderProg = undefined;
@@ -94,6 +108,38 @@ var app = function (_canvasId) {
       ]);
       _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, _cubeVbo.ibuffer);
       _gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, _cubeVbo.indices, _gl.STATIC_DRAW);
+
+      _cubeVbo.texCoords = new Float32Array([
+        0.0, 0.0, // Front Face
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0,
+        1.0, 0.0, // Back face
+        1.0, 1.0,
+        0.0, 1.0,
+        0.0, 0.0,
+        0.0, 1.0, // Top face
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 1.0,
+        1.0, 1.0, // Bottom face
+        0.0, 1.0,
+        0.0, 0.0,
+        1.0, 0.0,
+        1.0, 0.0, // Right face
+        1.0, 1.0,
+        0.0, 1.0,
+        0.0, 0.0,
+        0.0, 0.0, // Left face
+        1.0, 0.0,
+        1.0, 1.0,
+        0.0, 1.0
+      ]);
+      _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.tbuffer);
+      _gl.bufferData(_gl.ARRAY_BUFFER, _cubeVbo.texCoords, _gl.STATIC_DRAW);
+
+      // Cleanup
+      _gl.bindBuffer(_gl.ARRAY_BUFFER, null);
     },
     loop : loop,
     print : function () {
@@ -158,17 +204,17 @@ var app = function (_canvasId) {
     _gl.viewport(0, 0, _canvas.width, _canvas.height);
     _gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
 
-    var t = getElapsedSeconds() / 1.5;
+    var t = getElapsedSeconds() * 1.5;
 
 
     _pMatrix = webgl.perspectiveMatrix();
 
-    _mvMatrix = [
+    _mvMatrix = new Float32Array([
       Math.cos(t), 0, -Math.sin(t), 0,
       0, 1, 0, 0,
       Math.sin(t), 0, Math.cos(t), 0,
-      0, 0, 9, 1
-    ];
+      0, 0, 5, 1
+    ]);
 
     // Apply shader
     _gl.useProgram(_passShaderProg);
@@ -181,17 +227,30 @@ var app = function (_canvasId) {
     var vertexCol = _gl.getAttribLocation(_passShaderProg, "vertexColor");
     _gl.enableVertexAttribArray(vertexCol);
 
+    // Texture coordinates index
+    var texCoord = _gl.getAttribLocation(_passShaderProg, "textureCoord");
+    _gl.enableVertexAttribArray(texCoord);
+
+
     _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.vbuffer);
     _gl.vertexAttribPointer(vertexPos, 3.0, _gl.FLOAT, false, 0, 0);
 
     _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.cbuffer);
     _gl.vertexAttribPointer(vertexCol, 4.0, _gl.FLOAT, false, 0, 0);
 
+    _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.tbuffer);
+    _gl.vertexAttribPointer(texCoord, 2.0, _gl.FLOAT, false, 0, 0);
+
     var uModelViewMatrix = _gl.getUniformLocation(_passShaderProg, "modelViewMatrix");
     var uPerspectiveMatrix = _gl.getUniformLocation(_passShaderProg, "perspectiveMatrix");
+    var uSamplerTexture = _gl.getUniformLocation(_passShaderProg, "texture");
 
-    if(!(uModelViewMatrix && uPerspectiveMatrix))
+    if(!(uModelViewMatrix && uPerspectiveMatrix && uSamplerTexture))
       console.log("okay");
+
+    _gl.activeTexture(_gl.TEXTURE0);
+    _gl.bindTexture(_gl.TEXTURE_2D, _texture);
+    _gl.uniform1i(uSamplerTexture, 0);
 
     _gl.uniformMatrix4fv(uPerspectiveMatrix, false, new Float32Array(_pMatrix));
     _gl.uniformMatrix4fv(uModelViewMatrix, false, new Float32Array(_mvMatrix));

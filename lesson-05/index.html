@@ -1,28 +1,32 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>04 : vbo</title>
+    <title>05 : vbo</title>
     <!-- Vertex Shader -->
     <script type="x-shader/x-vertex" id="pass-vert">
       attribute vec3 vertexPosition;
       attribute vec4 vertexColor;
+      attribute vec2 textureCoord;
 
       uniform mat4 modelViewMatrix;
       uniform mat4 perspectiveMatrix;
 
+      varying vec2 vTextureCoord;
       varying vec4 vColor;
 
       void main() {
         gl_Position = perspectiveMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);
         vColor = vertexColor;
+        vTextureCoord = textureCoord;
       }
     </script>
     <!-- Fragment Shader -->
     <script type="x-shader/x-fragment" id="pass-frag">
       precision mediump float;
-      varying vec4 vColor;
+      varying vec2 vTextureCoord;
+      uniform sampler2D texture;
       void main() {
-        gl_FragColor = vColor;
+        gl_FragColor = texture2D(texture, vTextureCoord.xy);
       }
     </script>
     <script src="webgl.js" type="text/javascript"></script>
