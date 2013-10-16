@@ -7,29 +7,46 @@ var app = function (_canvasId) {
 
   var _texture = _gl.createTexture();
   var _textures = [ _gl.createTexture(), _gl.createTexture(), _gl.createTexture() ];
-  var _img = [ new Image(), new Image(), new Image() ];
+  var _img = new Image();
 
-  _img[0].onload = function () {
+  var _pressedKeys = {};
+  var _controls = {
+    z_translate : 8,
+    textureNumber : 0
+  };
+
+  document.onkeyup = function (ev) {
+    _pressedKeys[ev.keyCode] = false;
+  }
+
+  document.onkeydown = function (ev) {
+    _pressedKeys[ev.keyCode] = true;
+
+    if (ev.keyCode == 70) {
+      _controls.textureNumber = (_controls.textureNumber + 1) % 3;
+      console.log(_controls.textureNumber);
+    }
+  }
+
+  _img.onload = function () {
     _gl.pixelStorei(_gl.UNPACK_FLIP_Y_WEBGL, true);
-    _gl.bindTexture(_gl.TEXTURE_2D, _texture[0]);
-    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img[0]);
+
+    _gl.bindTexture(_gl.TEXTURE_2D, _textures[0]);
+    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img);
     _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.NEAREST);
     _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.NEAREST);
-  }
-  _img[1].onload = function () {
-    _gl.pixelStorei(_gl.UNPACK_FLIP_Y_WEBGL, true);
-    _gl.bindTexture(_gl.TEXTURE_2D, _texture[1]);
-    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img[1]);
+
+    _gl.bindTexture(_gl.TEXTURE_2D, _textures[1]);
+    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img);
     _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
     _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR);
-    _gl.bindTexture(_gl.TEXTURE_2D, null);
-  }
-  _img[2].onload = function () {
-    _gl.pixelStorei(_gl.UNPACK_FLIP_Y_WEBGL, true);
-    _gl.bindTexture(_gl.TEXTURE_2D, _texture[2]);
-    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img[2]);
+
+    _gl.bindTexture(_gl.TEXTURE_2D, _textures[2]);
+    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img);
     _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
-    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR);
+    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR_MIPMAP_NEAREST);
+    _gl.generateMipmap(_gl.TEXTURE_2D);
+
     _gl.bindTexture(_gl.TEXTURE_2D, null);
   }
   _img.src = "texture.png";
@@ -171,6 +188,7 @@ var app = function (_canvasId) {
    */
   function loop () {
     requestAnimationFrame(loop);
+    update();
     draw();
   }
 
@@ -211,6 +229,7 @@ var app = function (_canvasId) {
    * @return {undefined} undefined
    */
   function update() {
+    updatePosition();
   }
 
   /**
@@ -221,7 +240,7 @@ var app = function (_canvasId) {
     _gl.viewport(0, 0, _canvas.width, _canvas.height);
     _gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
 
-    var t = getElapsedSeconds() * 1.5;
+    var t = getElapsedSeconds() / 1.5;
 
 
     _pMatrix = webgl.perspectiveMatrix();
@@ -230,7 +249,7 @@ var app = function (_canvasId) {
       Math.cos(t), 0, -Math.sin(t), 0,
       0, 1, 0, 0,
       Math.sin(t), 0, Math.cos(t), 0,
-      0, 0, 5, 1
+      0, 0, _controls.z_translate, 1
     ]);
 
     // Apply shader
@@ -262,11 +281,13 @@ var app = function (_canvasId) {
     var uPerspectiveMatrix = _gl.getUniformLocation(_passShaderProg, "perspectiveMatrix");
     var uSamplerTexture = _gl.getUniformLocation(_passShaderProg, "texture");
 
-    if(!(uModelViewMatrix && uPerspectiveMatrix && uSamplerTexture))
-      console.log("okay");
+    if(!(uModelViewMatrix && uPerspectiveMatrix && uSamplerTexture)) {
+      console.log("Uniform variable is messed up");
+      return;
+    }
 
     _gl.activeTexture(_gl.TEXTURE0);
-    _gl.bindTexture(_gl.TEXTURE_2D, _texture);
+    _gl.bindTexture(_gl.TEXTURE_2D, _textures[_controls.textureNumber]);
     _gl.uniform1i(uSamplerTexture, 0);
 
     _gl.uniformMatrix4fv(uPerspectiveMatrix, false, new Float32Array(_pMatrix));
@@ -274,5 +295,29 @@ var app = function (_canvasId) {
 
     _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, _cubeVbo.ibuffer);
     _gl.drawElements(_gl.TRIANGLES, 36, _gl.UNSIGNED_SHORT, 0);
+
+    // console.log("i = " + _controls.textureNumber);
+  }
+
+  function updatePosition() {
+    if (_pressedKeys[72]) {
+      // console.log("<");
+    }
+    if (_pressedKeys[74]) {
+      // console.log("^");
+    }
+    if (_pressedKeys[75]) {
+      // console.log("v");
+    }
+    if (_pressedKeys[76]) {
+      // console.log(">");
+    }
+    if (_pressedKeys[87]) {
+      _controls.z_translate += .09;
+    }
+    if (_pressedKeys[83]) {
+      _controls.z_translate -= .09;
+    }
   }
 }
+
