@@ -8,11 +8,13 @@ var app = function (_canvasId) {
   var _texture = _gl.createTexture();
   var _textures = [ _gl.createTexture(), _gl.createTexture(), _gl.createTexture() ];
   var _img = new Image();
+  var _imgLoaded = false;
 
   var _pressedKeys = {};
   var _controls = {
     z_translate : 8,
-    textureNumber : 0
+    textureNumber : 0,
+    lightingDirection : [ 0, -.3, 1 ]
   };
 
   document.onkeyup = function (ev) {
@@ -48,6 +50,7 @@ var app = function (_canvasId) {
     _gl.generateMipmap(_gl.TEXTURE_2D);
 
     _gl.bindTexture(_gl.TEXTURE_2D, null);
+    _imgLoaded = true;
   }
   _img.src = "texture.jpg";
 
@@ -249,6 +252,10 @@ var app = function (_canvasId) {
    * @return {undefined} undefined
    */
   function draw() {
+    if (!_imgLoaded) {
+      return;
+    }
+
     _gl.viewport(0, 0, _canvas.width, _canvas.height);
     _gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
 
@@ -259,7 +266,8 @@ var app = function (_canvasId) {
 
     mat4.identity(_mvMatrix);
     mat4.translate(_mvMatrix, [ 0, 0, _controls.z_translate ]);
-    mat4.rotate(_mvMatrix, t, [ -2, 3, 1 ]);
+    // mat4.rotate(_mvMatrix, t, [ -2, 3, 1 ]);
+    mat4.rotate(_mvMatrix, 1.5*t, [ -1.5, -3, 4 ]);
 
     // Apply shader
     _gl.useProgram(_passShaderProg);
@@ -296,9 +304,16 @@ var app = function (_canvasId) {
     var uModelViewMatrix = _gl.getUniformLocation(_passShaderProg, "modelViewMatrix");
     var uPerspectiveMatrix = _gl.getUniformLocation(_passShaderProg, "perspectiveMatrix");
     var uSamplerTexture = _gl.getUniformLocation(_passShaderProg, "texture");
+    var uLightingDirection = _gl.getUniformLocation(_passShaderProg, "lightingDirection");
+    var uNormalMatrix = _gl.getUniformLocation(_passShaderProg, "normalMatrix");
 
     if(!(uModelViewMatrix && uPerspectiveMatrix && uSamplerTexture)) {
       console.log("Uniform variable is messed up");
+      return;
+    }
+
+    if (!(uLightingDirection && uNormalMatrix)) {
+      console.log("Lighting direction and normal matrix");
       return;
     }
 
@@ -309,10 +324,20 @@ var app = function (_canvasId) {
     _gl.uniformMatrix4fv(uPerspectiveMatrix, false, new Float32Array(_pMatrix));
     _gl.uniformMatrix4fv(uModelViewMatrix, false, new Float32Array(_mvMatrix));
 
+    // Lighting direction
+    var ld = vec3.create();
+    vec3.normalize(_controls.lightingDirection, ld);
+    vec3.scale(ld, -1);
+    _gl.uniform3fv(uLightingDirection, ld);
+    // Lighting normals
+    var normalMatrix = mat3.create();
+    mat4.toInverseMat3(_mvMatrix, normalMatrix);
+    mat3.transpose(normalMatrix);
+    _gl.uniformMatrix3fv(uNormalMatrix, false, normalMatrix);
+
+    // Draw
     _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, _cubeVbo.ibuffer);
     _gl.drawElements(_gl.TRIANGLES, 36, _gl.UNSIGNED_SHORT, 0);
-
-    // console.log("i = " + _controls.textureNumber);
   }
 
   function updatePosition() {
@@ -336,4 +361,3 @@ var app = function (_canvasId) {
     }
   }
 }
-
