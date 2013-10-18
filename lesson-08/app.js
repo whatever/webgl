@@ -11,11 +11,18 @@ var app = function (_canvasId) {
   var _imgLoaded = false;
 
   var _pressedKeys = {};
+  var _gui = new dat.GUI();
   var _controls = {
     z_translate : 8,
     textureNumber : 0,
-    lightingDirection : [ 0, -.3, 1 ]
+    lightingDirection : [ 0, -.3, 1 ],
+    ambientLightColor : [ .1, .1, .1 ],
+    directionalLightColor : [ .3, .3, .8 ]
   };
+
+  _gui.add(_controls, "z_translate");
+  _gui.addColor(_controls, "ambientLightColor");
+  _gui.addColor(_controls, "directionalLightColor");
 
   document.onkeyup = function (ev) {
     _pressedKeys[ev.keyCode] = false;
@@ -267,7 +274,7 @@ var app = function (_canvasId) {
     mat4.identity(_mvMatrix);
     mat4.translate(_mvMatrix, [ 0, 0, _controls.z_translate ]);
     // mat4.rotate(_mvMatrix, t, [ -2, 3, 1 ]);
-    mat4.rotate(_mvMatrix, 1.5*t, [ -1.5, -3, 4 ]);
+    mat4.rotate(_mvMatrix, 3.5*t, [ -.5, -2.5, 3.0 ]);
 
     // Apply shader
     _gl.useProgram(_passShaderProg);
@@ -304,8 +311,10 @@ var app = function (_canvasId) {
     var uModelViewMatrix = _gl.getUniformLocation(_passShaderProg, "modelViewMatrix");
     var uPerspectiveMatrix = _gl.getUniformLocation(_passShaderProg, "perspectiveMatrix");
     var uSamplerTexture = _gl.getUniformLocation(_passShaderProg, "texture");
-    var uLightingDirection = _gl.getUniformLocation(_passShaderProg, "lightingDirection");
     var uNormalMatrix = _gl.getUniformLocation(_passShaderProg, "normalMatrix");
+    var uLightingDirection = _gl.getUniformLocation(_passShaderProg, "lightingDirection");
+    var uAmbientLight = _gl.getUniformLocation(_passShaderProg, "ambientLightColor");
+    var uDirectionalLight = _gl.getUniformLocation(_passShaderProg, "directionalLightColor");
 
     if(!(uModelViewMatrix && uPerspectiveMatrix && uSamplerTexture)) {
       console.log("Uniform variable is messed up");
@@ -314,6 +323,11 @@ var app = function (_canvasId) {
 
     if (!(uLightingDirection && uNormalMatrix)) {
       console.log("Lighting direction and normal matrix");
+      return;
+    }
+
+    if (!(uAmbientLight && uDirectionalLight)) {
+      console.log("Lighting color");
       return;
     }
 
@@ -334,6 +348,11 @@ var app = function (_canvasId) {
     mat4.toInverseMat3(_mvMatrix, normalMatrix);
     mat3.transpose(normalMatrix);
     _gl.uniformMatrix3fv(uNormalMatrix, false, normalMatrix);
+    // Lighting colors
+    var ambientColor = _controls.ambientLightColor
+    var directionalColor = _controls.directionalLightColor;
+    _gl.uniform3f(uAmbientLight, ambientColor[0]/255, ambientColor[1]/255, ambientColor[2]/255);
+    _gl.uniform3f(uDirectionalLight, directionalColor[0]/255, directionalColor[1]/255, directionalColor[2]/255);
 
     // Draw
     _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, _cubeVbo.ibuffer);

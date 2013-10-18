@@ -4,6 +4,7 @@
     <title>07 : lighting</title>
     <!-- Vertex Shader -->
     <script src="glMatrix-0.9.5.min.js" type="text/javascript"></script>
+    <script src="dat.gui.min.js" type="text/javascript"></script>
     <script type="x-shader/x-vertex" id="pass-vert">
       attribute vec3 vertexPosition;
       attribute vec3 vertexNormal;
@@ -15,6 +16,9 @@
       uniform vec3 lightingDirection;
       uniform mat3 normalMatrix;
 
+      uniform vec3 ambientLightColor;
+      uniform vec3 directionalLightColor;
+
       varying vec2 vTextureCoord;
       varying vec4 vColor;
       varying vec3 vNormal;
@@ -24,7 +28,7 @@
       void main() {
         vec3 transformedNormal = normalMatrix * vertexNormal;
         float directionalLightWeighting = max(dot(transformedNormal, lightingDirection), 0.0);
-        vLightWeighting = vec3(.4, .45, .4) + .6 * vec3(1, 1, 1) * directionalLightWeighting;
+        vLightWeighting = ambientLightColor + directionalLightColor * directionalLightWeighting;
 
         // Compute on-screen position
         gl_Position = perspectiveMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);
