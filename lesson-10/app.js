@@ -12,6 +12,10 @@ var app = function (_canvasId) {
     new Star({ x : 1, y : 2, z : 0 }, _gl),
   ];
 
+  var _worldPositionBuffer = null;
+  var _worldTexCoordBuffer = null;
+  var _worldVertexCount;
+
   var _pressedKeys = {};
   var _gui = new dat.GUI();
   var _controls = {
@@ -21,7 +25,8 @@ var app = function (_canvasId) {
     ambientLightColor : [ .35 * 255, .30 * 255, .27 * 255 ],
     directionalLightColor : [ .6 * 255, .6 * 255, .6 * 255 ],
     alpha : 1.,
-    transparency : true
+    transparency : true,
+    pos : { x : 0, y : .3, z : 10 }
   };
 
   _gui.remember(_controls);
@@ -82,6 +87,8 @@ var app = function (_canvasId) {
   };
 
   var _passShaderProg = undefined;
+
+  loadWorld();
 
   ////
   //    Return actual object
@@ -268,6 +275,18 @@ var app = function (_canvasId) {
    * @return {undefined} undefined
    */
   function draw() {
+    // Clear
+    _gl.viewport(0, 0, _canvas.width, _canvas.height);
+    _gl.clearColor(0, 0, 0, 1);
+    _gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
+
+    // Stop rendering if the world isn't loaded
+    if (_worldVertexCount == 0 || _worldPositionBuffer == null || _worldTexCoordBuffer == null) {
+      _gl.clearColor(0, 1, 1, 1);
+      _gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
+      return;
+    }
+
     var alpha;
 
     if (!_imgLoaded) {
@@ -286,58 +305,34 @@ var app = function (_canvasId) {
       _gl.enable(_gl.DEPTH_TEST);
     }
 
-    _gl.viewport(0, 0, _canvas.width, _canvas.height);
-    _gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
-
+    // Time
     var t = getElapsedSeconds() / 1.5;
-
-
-    webgl.perspectiveMatrix({
-      fieldOfView : 45,
-      aspectRatio : 1,
-      nearPlane : .1,
-      farPlane : 100
-    });
-
+    // Perspective matrix
+    webgl.perspectiveMatrix({ fieldOfView : 45, aspectRatio : 1, nearPlane : .1, farPlane : 100 });
+    // Model view
     mat4.identity(webgl.mvMatrix);
-    mat4.translate(webgl.mvMatrix, [ 0, 0, -_controls.z_translate ]);
-    mat4.rotate(webgl.mvMatrix, 3.5*t, [ -.5, -2.5, 3.0 ]);
-
+    mat4.translate(webgl.mvMatrix, [ -_controls.pos.x, -_controls.pos.y, -_controls.pos.z ]);
     // Apply shader
     _gl.useProgram(_passShaderProg);
 
     // Draw star
     for (var k = 0; k < _starList.length; k++) {
-      _starList[k].draw(_passShaderProg);
+      // _starList[k].draw(_passShaderProg);
     }
 
     // Vertex index
     var vertexPos = _gl.getAttribLocation(_passShaderProg, "vertexPosition");
     _gl.enableVertexAttribArray(vertexPos);
 
-    // Normal index
-    var vertexNormal = _gl.getAttribLocation(_passShaderProg, "vertexNormal");
-    _gl.enableVertexAttribArray(vertexNormal);
-
-    // Color index
-    var vertexCol = _gl.getAttribLocation(_passShaderProg, "vertexColor");
-    _gl.enableVertexAttribArray(vertexCol);
-
     // Texture coordinates index
     var texCoord = _gl.getAttribLocation(_passShaderProg, "textureCoord");
     _gl.enableVertexAttribArray(texCoord);
 
     // Bind buffers for drawElements
-    _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.vbuffer);
+    _gl.bindBuffer(_gl.ARRAY_BUFFER, _worldPositionBuffer);
     _gl.vertexAttribPointer(vertexPos, 3.0, _gl.FLOAT, false, 0, 0);
 
-    _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.nbuffer);
-    _gl.vertexAttribPointer(vertexNormal, 3.0, _gl.FLOAT, false, 0, 0);
-
-    _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.cbuffer);
-    _gl.vertexAttribPointer(vertexCol, 4.0, _gl.FLOAT, false, 0, 0);
-
-    _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.tbuffer);
+    _gl.bindBuffer(_gl.ARRAY_BUFFER, _worldTexCoordBuffer);
     _gl.vertexAttribPointer(texCoord, 2.0, _gl.FLOAT, false, 0, 0);
 
     var uModelViewMatrix = _gl.getUniformLocation(_passShaderProg, "modelViewMatrix");
@@ -390,28 +385,71 @@ var app = function (_canvasId) {
 
     // Draw
     _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, _cubeVbo.ibuffer);
-    _gl.drawElements(_gl.TRIANGLES, 36, _gl.UNSIGNED_SHORT, 0);
+    _gl.drawArrays(_gl.TRIANGLES, 0, _worldVertexCount);
   }
 
   function updatePosition() {
     if (_pressedKeys[72]) {
-      // console.log("<");
+      _controls.pos.x -= .1;
     }
     if (_pressedKeys[74]) {
       // console.log("^");
+      _controls.pos.z -= .1;
     }
     if (_pressedKeys[75]) {
+      _controls.pos.z += .1;
       // console.log("v");
     }
     if (_pressedKeys[76]) {
       // console.log(">");
+      _controls.pos.x += .1;
     }
     if (_pressedKeys[87]) {
-      _controls.z_translate += .09;
     }
     if (_pressedKeys[83]) {
-      _controls.z_translate -= .09;
     }
+  }
+
+  function loadWorld() {
+    var request = new XMLHttpRequest();
+    request.open("GET", "world.txt");
+    request.onreadystatechange = function() {
+      if (request.readyState == 4) {
+        handleLoadedWorld(request.responseText);
+      }
+    }
+    request.send();
+  }
+
+  function handleLoadedWorld(data) {
+    _worldVertexCount = 0;
+
+    var vertexPositions = [];
+    var vertexTexCoords = [];
+
+    var lines = data.split("\n");
+
+    for (var i in lines) {
+      var vals = lines[i].replace(/^\s+/, "").split(/\s+/);
+      if (vals.length == 5 && vals[0] != "//") {
+        vertexPositions.push(parseFloat(vals[0]));
+        vertexPositions.push(parseFloat(vals[1]));
+        vertexPositions.push(parseFloat(vals[2]));
+        vertexTexCoords.push(parseFloat(vals[3]));
+        vertexTexCoords.push(parseFloat(vals[4]));
+        _worldVertexCount += 1;
+      }
+    }
+
+    _worldPositionBuffer = _gl.createBuffer();
+    _gl.bindBuffer(_gl.ARRAY_BUFFER, _worldPositionBuffer);
+    _gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(vertexPositions), _gl.STATIC_DRAW);
+
+    _worldTexCoordBuffer = _gl.createBuffer();
+    _gl.bindBuffer(_gl.ARRAY_BUFFER, _worldTexCoordBuffer);
+    _gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(vertexTexCoords), _gl.STATIC_DRAW);
+
+    _gl.bindBuffer(_gl.ARRAY_BUFFER, null);
   }
 }
 
