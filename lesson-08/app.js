@@ -13,16 +13,23 @@ var app = function (_canvasId) {
   var _pressedKeys = {};
   var _gui = new dat.GUI();
   var _controls = {
-    z_translate : 8,
+    z_translate : 8.,
     textureNumber : 0,
     lightingDirection : [ 0, -.3, 1 ],
-    ambientLightColor : [ .1, .1, .1 ],
-    directionalLightColor : [ .3, .3, .8 ]
+    ambientLightColor : [ .35 * 255, .30 * 255, .27 * 255 ],
+    directionalLightColor : [ .6 * 255, .6 * 255, .6 * 255 ],
+    alpha : 1.,
+    transparency : true
   };
 
-  _gui.add(_controls, "z_translate");
+  _gui.remember(_controls);
+
+  _gui.add(_controls, "z_translate", 0, 20.);
   _gui.addColor(_controls, "ambientLightColor");
   _gui.addColor(_controls, "directionalLightColor");
+  _gui.add(_controls, "transparency");
+  _gui.add(_controls, "alpha", 0, 1).onFinishChange(function(value) {
+  });
 
   document.onkeyup = function (ev) {
     _pressedKeys[ev.keyCode] = false;
@@ -242,8 +249,6 @@ var app = function (_canvasId) {
     _gl.clearColor(.25, .22, .2, 1);
     _gl.clearDepth(1.0);
     // Depth and blending
-    _gl.enable(_gl.DEPTH_TEST);
-    _gl.enable(_gl.BLEND);
   }
 
   /**
@@ -259,8 +264,23 @@ var app = function (_canvasId) {
    * @return {undefined} undefined
    */
   function draw() {
+    var alpha;
+
     if (!_imgLoaded) {
       return;
+    }
+
+    if (_controls.transparency) {
+      _gl.depthFunc(_gl.LESS);
+      _gl.enable(_gl.BLEND);
+      _gl.blendFunc(_gl.SRC_ALPHA, _gl.ONE);
+      _gl.disable(_gl.DEPTH_TEST);
+      alpha = _controls.alpha;
+    }
+    else {
+      alpha = 1.;
+      _gl.disable(_gl.BLEND);
+      _gl.enable(_gl.DEPTH_TEST);
     }
 
     _gl.viewport(0, 0, _canvas.width, _canvas.height);
@@ -273,7 +293,6 @@ var app = function (_canvasId) {
 
     mat4.identity(_mvMatrix);
     mat4.translate(_mvMatrix, [ 0, 0, _controls.z_translate ]);
-    // mat4.rotate(_mvMatrix, t, [ -2, 3, 1 ]);
     mat4.rotate(_mvMatrix, 3.5*t, [ -.5, -2.5, 3.0 ]);
 
     // Apply shader
@@ -295,7 +314,7 @@ var app = function (_canvasId) {
     var texCoord = _gl.getAttribLocation(_passShaderProg, "textureCoord");
     _gl.enableVertexAttribArray(texCoord);
 
-
+    // Bind buffers for drawElements
     _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.vbuffer);
     _gl.vertexAttribPointer(vertexPos, 3.0, _gl.FLOAT, false, 0, 0);
 
@@ -315,6 +334,7 @@ var app = function (_canvasId) {
     var uLightingDirection = _gl.getUniformLocation(_passShaderProg, "lightingDirection");
     var uAmbientLight = _gl.getUniformLocation(_passShaderProg, "ambientLightColor");
     var uDirectionalLight = _gl.getUniformLocation(_passShaderProg, "directionalLightColor");
+    var uAlpha = _gl.getUniformLocation(_passShaderProg, "alpha");
 
     if(!(uModelViewMatrix && uPerspectiveMatrix && uSamplerTexture)) {
       console.log("Uniform variable is messed up");
@@ -334,6 +354,7 @@ var app = function (_canvasId) {
     _gl.activeTexture(_gl.TEXTURE0);
     _gl.bindTexture(_gl.TEXTURE_2D, _textures[_controls.textureNumber]);
     _gl.uniform1i(uSamplerTexture, 0);
+    _gl.uniform1f(uAlpha, _controls.alpha);
 
     _gl.uniformMatrix4fv(uPerspectiveMatrix, false, new Float32Array(_pMatrix));
     _gl.uniformMatrix4fv(uModelViewMatrix, false, new Float32Array(_mvMatrix));

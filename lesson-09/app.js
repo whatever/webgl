@@ -2,27 +2,35 @@ var app = function (_canvasId) {
   var _canvas = document.getElementById(_canvasId);
   var _gl = _canvas.getContext("webgl");
 
-  var _pMatrix;
-  var _mvMatrix = mat4.create();
-
   var _texture = _gl.createTexture();
   var _textures = [ _gl.createTexture(), _gl.createTexture(), _gl.createTexture() ];
   var _img = new Image();
   var _imgLoaded = false;
+  var _starList = [
+    new Star({ x : 1, y : 1, z : 0 }, _gl),
+    new Star({ x : 2, y : 1, z : 0 }, _gl),
+    new Star({ x : 1, y : 2, z : 0 }, _gl),
+  ];
 
   var _pressedKeys = {};
   var _gui = new dat.GUI();
   var _controls = {
-    z_translate : 8,
+    z_translate : 12.,
     textureNumber : 0,
-    lightingDirection : [ 0, -.3, 1 ],
-    ambientLightColor : [ .1, .1, .1 ],
-    directionalLightColor : [ .3, .3, .8 ]
+    lightingDirection : [ -1, -.3, -1 ],
+    ambientLightColor : [ .35 * 255, .30 * 255, .27 * 255 ],
+    directionalLightColor : [ .6 * 255, .6 * 255, .6 * 255 ],
+    alpha : 1.,
+    transparency : true
   };
 
-  _gui.add(_controls, "z_translate");
+  _gui.remember(_controls);
+
+  _gui.add(_controls, "z_translate", 0, 20.);
   _gui.addColor(_controls, "ambientLightColor");
   _gui.addColor(_controls, "directionalLightColor");
+  _gui.add(_controls, "transparency");
+  _gui.add(_controls, "alpha", 0, 1);
 
   document.onkeyup = function (ev) {
     _pressedKeys[ev.keyCode] = false;
@@ -242,8 +250,6 @@ var app = function (_canvasId) {
     _gl.clearColor(.25, .22, .2, 1);
     _gl.clearDepth(1.0);
     // Depth and blending
-    _gl.enable(_gl.DEPTH_TEST);
-    _gl.enable(_gl.BLEND);
   }
 
   /**
@@ -252,6 +258,9 @@ var app = function (_canvasId) {
    */
   function update() {
     updatePosition();
+    for (var k = 0; k < _starList.length; k++) {
+      _starList[k].update();
+    }
   }
 
   /**
@@ -259,8 +268,22 @@ var app = function (_canvasId) {
    * @return {undefined} undefined
    */
   function draw() {
+    var alpha;
+
     if (!_imgLoaded) {
       return;
+    }
+
+    if (_controls.transparency) {
+      _gl.enable(_gl.BLEND);
+      _gl.blendFunc(_gl.SRC_ALPHA, _gl.ONE);
+      _gl.disable(_gl.DEPTH_TEST);
+      alpha = _controls.alpha;
+    }
+    else {
+      alpha = 1.;
+      _gl.disable(_gl.BLEND);
+      _gl.enable(_gl.DEPTH_TEST);
     }
 
     _gl.viewport(0, 0, _canvas.width, _canvas.height);
@@ -269,15 +292,24 @@ var app = function (_canvasId) {
     var t = getElapsedSeconds() / 1.5;
 
 
-    _pMatrix = webgl.perspectiveMatrix();
+    webgl.perspectiveMatrix({
+      fieldOfView : 45,
+      aspectRatio : 1,
+      nearPlane : .1,
+      farPlane : 100
+    });
 
-    mat4.identity(_mvMatrix);
-    mat4.translate(_mvMatrix, [ 0, 0, _controls.z_translate ]);
-    // mat4.rotate(_mvMatrix, t, [ -2, 3, 1 ]);
-    mat4.rotate(_mvMatrix, 3.5*t, [ -.5, -2.5, 3.0 ]);
+    mat4.identity(webgl.mvMatrix);
+    mat4.translate(webgl.mvMatrix, [ 0, 0, -_controls.z_translate ]);
+    mat4.rotate(webgl.mvMatrix, 3.5*t, [ -.5, -2.5, 3.0 ]);
 
     // Apply shader
     _gl.useProgram(_passShaderProg);
+
+    // Draw star
+    for (var k = 0; k < _starList.length; k++) {
+      _starList[k].draw(_passShaderProg);
+    }
 
     // Vertex index
     var vertexPos = _gl.getAttribLocation(_passShaderProg, "vertexPosition");
@@ -295,7 +327,7 @@ var app = function (_canvasId) {
     var texCoord = _gl.getAttribLocation(_passShaderProg, "textureCoord");
     _gl.enableVertexAttribArray(texCoord);
 
-
+    // Bind buffers for drawElements
     _gl.bindBuffer(_gl.ARRAY_BUFFER, _cubeVbo.vbuffer);
     _gl.vertexAttribPointer(vertexPos, 3.0, _gl.FLOAT, false, 0, 0);
 
@@ -315,6 +347,7 @@ var app = function (_canvasId) {
     var uLightingDirection = _gl.getUniformLocation(_passShaderProg, "lightingDirection");
     var uAmbientLight = _gl.getUniformLocation(_passShaderProg, "ambientLightColor");
     var uDirectionalLight = _gl.getUniformLocation(_passShaderProg, "directionalLightColor");
+    var uAlpha = _gl.getUniformLocation(_passShaderProg, "alpha");
 
     if(!(uModelViewMatrix && uPerspectiveMatrix && uSamplerTexture)) {
       console.log("Uniform variable is messed up");
@@ -334,9 +367,10 @@ var app = function (_canvasId) {
     _gl.activeTexture(_gl.TEXTURE0);
     _gl.bindTexture(_gl.TEXTURE_2D, _textures[_controls.textureNumber]);
     _gl.uniform1i(uSamplerTexture, 0);
+    _gl.uniform1f(uAlpha, _controls.alpha);
 
-    _gl.uniformMatrix4fv(uPerspectiveMatrix, false, new Float32Array(_pMatrix));
-    _gl.uniformMatrix4fv(uModelViewMatrix, false, new Float32Array(_mvMatrix));
+    _gl.uniformMatrix4fv(uPerspectiveMatrix, false, webgl.pMatrix);
+    _gl.uniformMatrix4fv(uModelViewMatrix, false, webgl.mvMatrix);
 
     // Lighting direction
     var ld = vec3.create();
@@ -345,7 +379,7 @@ var app = function (_canvasId) {
     _gl.uniform3fv(uLightingDirection, ld);
     // Lighting normals
     var normalMatrix = mat3.create();
-    mat4.toInverseMat3(_mvMatrix, normalMatrix);
+    mat4.toInverseMat3(webgl.mvMatrix, normalMatrix);
     mat3.transpose(normalMatrix);
     _gl.uniformMatrix3fv(uNormalMatrix, false, normalMatrix);
     // Lighting colors
@@ -379,4 +413,84 @@ var app = function (_canvasId) {
       _controls.z_translate -= .09;
     }
   }
+}
+
+function Star (_pos, _gl) {
+  _pos = _pos || {};
+  _pos.x = _pos.x || 0;
+  _pos.y = _pos.y || 0;
+  _pos.z = _pos.z || 0;
+  this.gl = _gl;
+  this.triangle = {
+    vertices : [],
+    colors : [],
+    vbuffer : this.gl.createBuffer(),
+    cbuffer : this.gl.createBuffer()
+  };
+
+  this.triangle.vertices = new Float32Array([
+     _pos.x, _pos.y + 1, 0,
+     _pos.x, _pos.y, 0,
+     _pos.x + 1, _pos.y, 0,
+  ]);
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.triangle.vbuffer);
+  this.gl.bufferData(this.gl.ARRAY_BUFFER, this.triangle.vertices, this.gl.STATIC_DRAW);
+
+  this.triangle.colors = new Float32Array([
+     1, 1, 1, 1,
+     0, 1, 1, 1,
+     1, 1, 0, 1
+  ]);
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.triangle.cbuffer);
+  this.gl.bufferData(this.gl.ARRAY_BUFFER, this.triangle.colors, this.gl.STATIC_DRAW);
+
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+}
+
+Star.prototype.update = function () {
+}
+
+Star.prototype.draw = function (shader) {
+  this.gl.useProgram(shader);
+  webgl.pushModelView();
+
+  // Attributes : vertexPosition, vertexColor
+  var aPosition = this.gl.getAttribLocation(shader, "vertexPosition");
+  this.gl.enableVertexAttribArray(aPosition);
+
+  var aColor = this.gl.getAttribLocation(shader, "vertexColor");
+  this.gl.enableVertexAttribArray(aColor);
+
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.triangle.vbuffer);
+  this.gl.vertexAttribPointer(aPosition, 3, this.gl.FLOAT, false, 0, 0);
+
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.triangle.cbuffer);
+  this.gl.vertexAttribPointer(aColor, 4, this.gl.FLOAT, false, 0, 0);
+
+  // Uniforms : mvMatrix, pMatrix
+  var uModelViewMatrix = this.gl.getUniformLocation(shader, "modelViewMatrix");
+  var uPerspectiveMatrix = this.gl.getUniformLocation(shader, "perspectiveMatrix");
+  var uLightingDirection = this.gl.getUniformLocation(shader, "lightingDirection");
+  var uAmbientLight = this.gl.getUniformLocation(shader, "ambientLightColor");
+  var uDirectionalLight = this.gl.getUniformLocation(shader, "directionalLightColor");
+  var uAlpha = this.gl.getUniformLocation(shader, "alpha");
+  var uNormalMatrix = this.gl.getUniformLocation(shader, "normalMatrix");
+
+  mat4.identity(webgl.mvMatrix);
+  mat4.translate(webgl.mvMatrix, [ -2, 0, -9 ]);
+
+  var uNormal = mat3.create();
+  mat4.identity(uNormal);
+
+  this.gl.uniformMatrix4fv(uPerspectiveMatrix, false, webgl.pMatrix);
+  this.gl.uniformMatrix4fv(uModelViewMatrix, false, webgl.mvMatrix);
+  this.gl.uniform1f(uAlpha, 1.);
+  this.gl.uniform3fv(uAmbientLight, new Float32Array([ .5, .5, .5 ]));
+  this.gl.uniform3fv(uDirectionalLight, new Float32Array([ .5, .5, .5 ]));
+  this.gl.uniformMatrix3fv(uNormalMatrix, false, uNormal);
+
+  // Draw
+  this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
+
+  webgl.popModelView();
 }
