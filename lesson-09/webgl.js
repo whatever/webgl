@@ -1,4 +1,5 @@
 var webgl = (function () {
+  var _mvMatrixStack = [], _pMatrixStack = [];
   return {
     ___about : "webgl",
     mvMatrix : mat4.create(),
@@ -46,7 +47,9 @@ var webgl = (function () {
      * @return {undefined} undefined
      */
     pushModelView : function () {
-      _mvMatrixStack.push(this.mvMatrix);
+      var copy = mat4.create();
+      mat4.set(this.mvMatrix, copy);
+      _mvMatrixStack.push(copy);
     },
     /**
      * Pop Model View Matrix onto the Stack

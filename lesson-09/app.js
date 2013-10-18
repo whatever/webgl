@@ -6,6 +6,11 @@ var app = function (_canvasId) {
   var _textures = [ _gl.createTexture(), _gl.createTexture(), _gl.createTexture() ];
   var _img = new Image();
   var _imgLoaded = false;
+  var _starList = [
+    new Star({ x : 1, y : 1, z : 0 }, _gl),
+    new Star({ x : 2, y : 1, z : 0 }, _gl),
+    new Star({ x : 1, y : 2, z : 0 }, _gl),
+  ];
 
   var _pressedKeys = {};
   var _gui = new dat.GUI();
@@ -25,8 +30,7 @@ var app = function (_canvasId) {
   _gui.addColor(_controls, "ambientLightColor");
   _gui.addColor(_controls, "directionalLightColor");
   _gui.add(_controls, "transparency");
-  _gui.add(_controls, "alpha", 0, 1).onFinishChange(function(value) {
-  });
+  _gui.add(_controls, "alpha", 0, 1);
 
   document.onkeyup = function (ev) {
     _pressedKeys[ev.keyCode] = false;
@@ -254,6 +258,9 @@ var app = function (_canvasId) {
    */
   function update() {
     updatePosition();
+    for (var k = 0; k < _starList.length; k++) {
+      _starList[k].update();
+    }
   }
 
   /**
@@ -298,6 +305,11 @@ var app = function (_canvasId) {
 
     // Apply shader
     _gl.useProgram(_passShaderProg);
+
+    // Draw star
+    for (var k = 0; k < _starList.length; k++) {
+      _starList[k].draw(_passShaderProg);
+    }
 
     // Vertex index
     var vertexPos = _gl.getAttribLocation(_passShaderProg, "vertexPosition");
@@ -401,4 +413,84 @@ var app = function (_canvasId) {
       _controls.z_translate -= .09;
     }
   }
+}
+
+function Star (_pos, _gl) {
+  _pos = _pos || {};
+  _pos.x = _pos.x || 0;
+  _pos.y = _pos.y || 0;
+  _pos.z = _pos.z || 0;
+  this.gl = _gl;
+  this.triangle = {
+    vertices : [],
+    colors : [],
+    vbuffer : this.gl.createBuffer(),
+    cbuffer : this.gl.createBuffer()
+  };
+
+  this.triangle.vertices = new Float32Array([
+     _pos.x, _pos.y + 1, 0,
+     _pos.x, _pos.y, 0,
+     _pos.x + 1, _pos.y, 0,
+  ]);
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.triangle.vbuffer);
+  this.gl.bufferData(this.gl.ARRAY_BUFFER, this.triangle.vertices, this.gl.STATIC_DRAW);
+
+  this.triangle.colors = new Float32Array([
+     1, 1, 1, 1,
+     0, 1, 1, 1,
+     1, 1, 0, 1
+  ]);
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.triangle.cbuffer);
+  this.gl.bufferData(this.gl.ARRAY_BUFFER, this.triangle.colors, this.gl.STATIC_DRAW);
+
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+}
+
+Star.prototype.update = function () {
+}
+
+Star.prototype.draw = function (shader) {
+  this.gl.useProgram(shader);
+  webgl.pushModelView();
+
+  // Attributes : vertexPosition, vertexColor
+  var aPosition = this.gl.getAttribLocation(shader, "vertexPosition");
+  this.gl.enableVertexAttribArray(aPosition);
+
+  var aColor = this.gl.getAttribLocation(shader, "vertexColor");
+  this.gl.enableVertexAttribArray(aColor);
+
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.triangle.vbuffer);
+  this.gl.vertexAttribPointer(aPosition, 3, this.gl.FLOAT, false, 0, 0);
+
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.triangle.cbuffer);
+  this.gl.vertexAttribPointer(aColor, 4, this.gl.FLOAT, false, 0, 0);
+
+  // Uniforms : mvMatrix, pMatrix
+  var uModelViewMatrix = this.gl.getUniformLocation(shader, "modelViewMatrix");
+  var uPerspectiveMatrix = this.gl.getUniformLocation(shader, "perspectiveMatrix");
+  var uLightingDirection = this.gl.getUniformLocation(shader, "lightingDirection");
+  var uAmbientLight = this.gl.getUniformLocation(shader, "ambientLightColor");
+  var uDirectionalLight = this.gl.getUniformLocation(shader, "directionalLightColor");
+  var uAlpha = this.gl.getUniformLocation(shader, "alpha");
+  var uNormalMatrix = this.gl.getUniformLocation(shader, "normalMatrix");
+
+  mat4.identity(webgl.mvMatrix);
+  mat4.translate(webgl.mvMatrix, [ -2, 0, -9 ]);
+
+  var uNormal = mat3.create();
+  mat4.identity(uNormal);
+
+  this.gl.uniformMatrix4fv(uPerspectiveMatrix, false, webgl.pMatrix);
+  this.gl.uniformMatrix4fv(uModelViewMatrix, false, webgl.mvMatrix);
+  this.gl.uniform1f(uAlpha, 1.);
+  this.gl.uniform3fv(uAmbientLight, new Float32Array([ .5, .5, .5 ]));
+  this.gl.uniform3fv(uDirectionalLight, new Float32Array([ .5, .5, .5 ]));
+  this.gl.uniformMatrix3fv(uNormalMatrix, false, uNormal);
+
+  // Draw
+  this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
+
+  webgl.popModelView();
 }
