@@ -8,10 +8,12 @@ var app = function (_canvasId) {
   var _controls = {
     alpha : 0,
     color : [ 0, 0, 0, 1 ],
+    rotate : 1.2,
     gui : new dat.GUI()
   };
-  // _controls.gui.add(_controls, "alpha", 0, 20.);
-  // _controls.gui.addColor(_controls, "color");
+  _controls.gui.add(_controls, "alpha", 0, 20.);
+  _controls.gui.add(_controls, "rotate", 0., 2. * 3.14159);
+  _controls.gui.addColor(_controls, "color");
 
   // Key handling
   var _pressedKeys = {};
@@ -68,6 +70,7 @@ var app = function (_canvasId) {
   }
 
   function update() {
+    _tangle.update(_controls.rotate);
   }
 
   function draw() {
@@ -111,11 +114,13 @@ var Tangle = (function (gl) {
       y : y + Math.sin(2.5 * pos.y),
       z : 1 + 4 * Math.random()
     };
+    /*
     pos = {
       x : x,
       y : y,
       z : 1. - Math.random()/2
     };
+    */
 
     _positions.push(pos.x);
     _positions.push(pos.y);
@@ -149,7 +154,12 @@ var Tangle = (function (gl) {
   var _program;
   initShader();
 
+  var _angle = 0;
+
   return {
+    update : function (angle) {
+      _angle = angle;
+    },
     draw : function () {
       webgl.pushModelView();
 
@@ -160,8 +170,8 @@ var Tangle = (function (gl) {
         farPlane : 100
       });
       mat4.identity(webgl.mvMatrix);
-      mat4.translate(webgl.mvMatrix, [  -.1 -center.x, -center.y, -4 ]);
-      mat4.rotate(webgl.mvMatrix, 1.7 + getElapsedSeconds(), [ 0, 1, 0 ]);
+      mat4.translate(webgl.mvMatrix, [  0, 0, -15 ]);
+      mat4.rotate(webgl.mvMatrix, _angle, [ 0, 1, 0 ]);
 
       gl.useProgram(_program);
 
