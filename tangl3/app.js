@@ -4,6 +4,15 @@ var app = function (_canvasId) {
   var _gl = _canvas.getContext("webgl");
   var _isRunning = false;
 
+  var _grid = {
+    xmin : -1.0,
+    xmax : 1.0,
+    ymin : -1.0,
+    ymax : 1.0,
+    xdim : 70,
+    ydim : 70
+  };
+
   // Controls : GUI stuff
   var _controls = {
     alpha : 0,
@@ -96,6 +105,8 @@ var app = function (_canvasId) {
 }
 
 var Tangle = (function (gl) {
+  var xdim, ydim;
+
   var _indices = [];
   var _positions = [];
   var _colors = [];
