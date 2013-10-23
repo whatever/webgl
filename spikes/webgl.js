@@ -7,10 +7,10 @@ var webgl = (function () {
     nMatrix : mat4.create(),
     /**
      * Create and Compile a shader from Source Code
-     * @param {!WebGLRenderingContext}
-     * @param {string}
-     * @param {number}
-     * @return {!WebGLShader}
+     * @param {!WebGLRenderingContext} ... ...
+     * @param {string} ... ...
+     * @param {number} ... ...
+     * @return {!WebGLShader} ...
      */
     compileShader : function (gl, shaderSource, shaderType) {
       var shader = gl.createShader(shaderType);
@@ -36,26 +36,26 @@ var webgl = (function () {
         console.log("** PROGRAM ERROR **");
       return program;
     },
+    /*
+     */
+    createProgramFromIds : function (gl, vertId, fragId) {
+      var vertSource = this.getShaderSource(vertId);
+      var fragSource = this.getShaderSource(fragId);
+      var vertShader = this.compileShader(gl, vertSource, gl.VERTEX_SHADER);
+      var fragShader = this.compileShader(gl, fragSource, gl.FRAGMENT_SHADER);
+      return this.createProgram(gl, vertShader, fragShader);
+    },
     /**
      * Get Text of Script Object
      * @param {string} id a character-string specifying the id of the script
      * element container shader information
      * @return {string} source code for a shader
      */
-    getShader : function (id) {
+    getShaderSource : function (id) {
       var shader = document.getElementById(id);
       if (!shader)
         throw "Fuck";
       return shader.text;
-    },
-    /**
-     * Create a Program from a Vertex and Fragment Shader
-     * @param {string} id a character-string specifying the id of the script
-     * element container shader information
-     * @return {string} source code for a shader
-     */
-    createProgram : function (text, type) {
-      return undefined;
     },
     /**
      * Perspective-Matrix

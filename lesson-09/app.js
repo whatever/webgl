@@ -24,8 +24,6 @@ var app = function (_canvasId) {
     transparency : true
   };
 
-  _gui.remember(_controls);
-
   _gui.add(_controls, "z_translate", 0, 20.);
   _gui.addColor(_controls, "ambientLightColor");
   _gui.addColor(_controls, "directionalLightColor");

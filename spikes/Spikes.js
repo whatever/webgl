@@ -11,13 +11,14 @@ var Spikes = (function () {
   var _vbo = {
     pbuffer : gl.createBuffer(),
     cbuffer : gl.createBuffer(),
+    nbuffer : gl.createBuffer(),
     ibuffer : gl.createBuffer()
   };
 
   _init();
 
   return {
-    about : "fuck",
+    _about : "fuck",
     set : _set,
     update : _update,
     draw : _draw
@@ -75,12 +76,16 @@ var Spikes = (function () {
   function _update() {
   }
 
-  function _draw() {
-    webgl.pushMatrix();
+  function _draw(shader) {
+    webgl.pushModelView();
     webgl.perspectiveMatrix({ fieldOfView : 45, aspectRatio : 1, nearPlane : .1, farPlane : 100 });
+
     var aPosition = gl.getAttribLocation(shader, "aPosition");
     var aColor = gl.getAttribLocation(shader, "aColor");
     var aNormal = gl.getAttribLocation(shader, "aNormal");
+    gl.enableVertexAttribArray(aPosition);
+    gl.enableVertexAttribArray(aColor);
+    gl.enableVertexAttribArray(aNormal);
 
     var uMVMatrix = gl.getUniformLocation(shader, "uMVMatrix");
     var uPMatrix = gl.getUniformLocation(shader, "uPMatrix");
@@ -91,7 +96,24 @@ var Spikes = (function () {
     var uDirectionalCol = gl.getUniformLocation(shader, "uDirectionalCol");
     var uAlpha = gl.getUniformLocation(shader, "uAlpha");
 
+    gl.uniformMatrix4fv(uPMatrix, false, webgl.pMatrix);
+    gl.uniformMatrix4fv(uMVMatrix, false, webgl.mvMatrix);
 
-    webgl.popMatrix();
+    var normalMatrix = mat3.create();
+    mat4.toInverseMat3(webgl.mvMatrix, normalMatrix);
+    mat3.transpose(normalMatrix);
+    gl.uniformMatrix3fv(uNMatrix, false, normalMatrix);
+
+    // Specify position attribute
+    gl.bindBuffer(gl.ARRAY_BUFFER, _vbo.pbuffer);
+    gl.vertexAttribPointer(aPosition, 3.0, gl.FLOAT, false, 0, 0);
+
+    // Specify color attribute
+    gl.bindBuffer(gl.ARRAY_BUFFER, _vbo.cbuffer);
+    gl.vertexAttribPointer(aColor, 4.0, gl.FLOAT, false, 0, 0);
+
+    // gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    webgl.popModelView();
   }
 });

@@ -3,19 +3,11 @@ var app = function (_canvasId) {
   var _gl = _canvas.getContext("webgl");
 
   var _spikes = Spikes();
-
-  var _texture = _gl.createTexture();
-  var _textures = [ _gl.createTexture(), _gl.createTexture(), _gl.createTexture() ];
-  var _img = new Image();
-  var _imgLoaded = false;
-  var _starList = [
-    new Star({ x : 1, y : 1, z : 0 }, _gl),
-    new Star({ x : 2, y : 1, z : 0 }, _gl),
-    new Star({ x : 1, y : 2, z : 0 }, _gl),
-  ];
-
+  var _is = { running : true };
+  var _isRunning = true;
+  // ...
   var _pressedKeys = {};
-  var _gui = new dat.GUI();
+  // var _gui = new dat.GUI();
   var _controls = {
     z_translate : 12.,
     textureNumber : 0,
@@ -26,13 +18,13 @@ var app = function (_canvasId) {
     transparency : true
   };
 
-  _gui.remember(_controls);
-
+  /*
   _gui.add(_controls, "z_translate", 0, 20.);
   _gui.addColor(_controls, "ambientLightColor");
   _gui.addColor(_controls, "directionalLightColor");
   _gui.add(_controls, "transparency");
   _gui.add(_controls, "alpha", 0, 1);
+  */
 
   document.onkeyup = function (ev) {
     _pressedKeys[ev.keyCode] = false;
@@ -40,40 +32,10 @@ var app = function (_canvasId) {
 
   document.onkeydown = function (ev) {
     _pressedKeys[ev.keyCode] = true;
-
-    if (ev.keyCode == 70) {
-      _controls.textureNumber = (_controls.textureNumber + 1) % 3;
-      console.log(_controls.textureNumber);
-    }
   }
-
-  _img.onload = function () {
-    _gl.pixelStorei(_gl.UNPACK_FLIP_Y_WEBGL, true);
-
-    _gl.bindTexture(_gl.TEXTURE_2D, _textures[0]);
-    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img);
-    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.NEAREST);
-    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.NEAREST);
-
-    _gl.bindTexture(_gl.TEXTURE_2D, _textures[1]);
-    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img);
-    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
-    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR);
-
-    _gl.bindTexture(_gl.TEXTURE_2D, _textures[2]);
-    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, _img);
-    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
-    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR_MIPMAP_NEAREST);
-    _gl.generateMipmap(_gl.TEXTURE_2D);
-
-    _gl.bindTexture(_gl.TEXTURE_2D, null);
-    _imgLoaded = true;
-  }
-  _img.src = "texture.jpg";
 
   var _passShaderProg = undefined;
 
-  ////
   //    Return actual object
   return {
     init : function () {
@@ -92,50 +54,24 @@ var app = function (_canvasId) {
    * @return {undefined} undefined
    */
   function loop () {
-    requestAnimationFrame(loop);
+    if (_isRunning)
+      requestAnimationFrame(loop);
     update();
     draw();
   }
 
-  /**
-   * Setup Necessary Stuff
-   * @return {undefined} undefined
-   */
   function setup() {
-    // Setup viewport
+    // Viewport
     _gl.viewport(0, 0, _canvas.width, _canvas.height);
-    // Shader
-    var shader = {
-      _code : { vert : webgl.getShader("pass-vert"), frag : webgl.getShader("pass-frag") },
-      vert : _gl.createShader(_gl.VERTEX_SHADER),
-      frag : _gl.createShader(_gl.FRAGMENT_SHADER)
-    };
-    // Compile vert shader
-    _gl.shaderSource(shader.vert, shader._code.vert);
-    _gl.compileShader(shader.vert);
-    // Compile frag shader
-    _gl.shaderSource(shader.frag, shader._code.frag);
-    _gl.compileShader(shader.frag);
-    // Attach shader
-    _passShaderProg = _gl.createProgram();
-    _gl.attachShader(_passShaderProg, shader.vert);
-    _gl.attachShader(_passShaderProg, shader.frag);
-    _gl.linkProgram(_passShaderProg);
-    // Clear settings
+    // Shader program
+    _passShaderProg = webgl.createProgramFromIds(gl, "pass-vert", "pass-frag");
+    // Clear values
     _gl.clearColor(.25, .22, .2, 1);
     _gl.clearDepth(1.0);
-    // Depth and blending
   }
 
-  /**
-   * Update Before Drawing
-   * @return {undefined} undefined
-   */
   function update() {
     updatePosition();
-    for (var k = 0; k < _starList.length; k++) {
-      _starList[k].update();
-    }
   }
 
   /**
@@ -162,32 +98,11 @@ var app = function (_canvasId) {
     // Apply shader
     gl.useProgram(_passShaderProg);
 
+    // ...
+    _spikes.draw(_passShaderProg);
+
 
     return;
-
-    _gl.activeTexture(_gl.TEXTURE0);
-    _gl.bindTexture(_gl.TEXTURE_2D, _textures[_controls.textureNumber]);
-    _gl.uniform1i(uSamplerTexture, 0);
-    _gl.uniform1f(uAlpha, _controls.alpha);
-
-    _gl.uniformMatrix4fv(uPerspectiveMatrix, false, webgl.pMatrix);
-    _gl.uniformMatrix4fv(uModelViewMatrix, false, webgl.mvMatrix);
-
-    // Lighting direction
-    var ld = vec3.create();
-    vec3.normalize(_controls.lightingDirection, ld);
-    vec3.scale(ld, -1);
-    _gl.uniform3fv(uLightingDirection, ld);
-    // Lighting normals
-    var normalMatrix = mat3.create();
-    mat4.toInverseMat3(webgl.mvMatrix, normalMatrix);
-    mat3.transpose(normalMatrix);
-    _gl.uniformMatrix3fv(uNormalMatrix, false, normalMatrix);
-    // Lighting colors
-    var ambientColor = _controls.ambientLightColor
-    var directionalColor = _controls.directionalLightColor;
-    _gl.uniform3f(uAmbientLight, ambientColor[0]/255, ambientColor[1]/255, ambientColor[2]/255);
-    _gl.uniform3f(uDirectionalLight, directionalColor[0]/255, directionalColor[1]/255, directionalColor[2]/255);
 
     // Draw
     _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, _cubeVbo.ibuffer);
