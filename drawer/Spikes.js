@@ -1,11 +1,11 @@
 var Spikes = (function () {
   var _grid = {
-    xmin : -.6,
-    xmax : .6,
-    ymin : -.6,
-    ymax : .6,
-    xsize : 23,
-    ysize : 3
+    xmin : -1.,
+    xmax : 1.,
+    ymin : -1.,
+    ymax : 1.,
+    xsize : 50,
+    ysize : 50
   };
 
   var _vbo = {
@@ -19,9 +19,6 @@ var Spikes = (function () {
 
   _init();
 
-  var _simpleShader = webgl.createProgramFromIds(gl, "vert-simple", "frag-simple");
-  var _drawer = new Drawer(gl, _simpleShader);
-
   return {
     _about : "fuck",
     set : _set,
@@ -32,7 +29,7 @@ var Spikes = (function () {
   function _init() {
     var positions = [], normals = [], colors = [], indices = [];
     var f = function (u, v) {
-      return Math.sin(2 * u);
+      return Math.sin(2*u);
     }
     for (var i = 0; i < _grid.xsize * _grid.ysize; i++) {
       var tx = (i % _grid.xsize)/(_grid.xsize - 1);
@@ -63,22 +60,28 @@ var Spikes = (function () {
     var dx = (_grid.xmax - _grid.xmin) / _grid.xsize / 2;
     var dy = (_grid.ymax - _grid.ymin) / _grid.ysize / 2;
 
-    for (var k=0; k < positions.length/3; k++) {
-      var i = 3 * k;
+    for (var i=0; i < _grid.xsize; i++) {
+      for (var j=0; j < _grid.ysize; j++) {
+        var k = j * _grid.xsize + i;
+        var p = { x : positions[3*k + 0], y : positions[3*k + 1], z : positions[3*k + 2] };
 
-      var x = positions[i+0];
-      var y = positions[i+1];
-      var z = positions[i+2];
+        var a = { x : 2 * dx, y : 0, z : f(p.x + dx, p.y) - f(p.x - dx, p.y) };
+        var b = { x : 0, y : 2 * dy, z : f(p.x, p.y + dy) - f(p.x, p.y - dy) };
+        var n = {};
+        n.x = a.y * b.z - a.z * b.y;
+        n.y = a.z * b.y - a.x * b.z;
+        n.z = a.x * b.y - a.y * b.x;
 
-      var n = {
-        x : (f(x + dx, y) - f(x, y))/dx,
-        y : (f(x, y + dy) - f(x, y))/dy,
-        z : -1
-      };
-      var d = Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
-      normals.push(n.x/d);
-      normals.push(n.y/d);
-      normals.push(n.z/d);
+        var d = Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
+
+        n.x /= d;
+        n.y /= d;
+        n.z /= d;
+
+        normals.push(n.x);
+        normals.push(n.y);
+        normals.push(n.z);
+      }
     }
 
     _vbo.positions = positions;
@@ -108,6 +111,7 @@ var Spikes = (function () {
   function _draw(shader) {
     webgl.pushModelView();
     webgl.perspectiveMatrix({ fieldOfView : 45, aspectRatio : 1, nearPlane : .1, farPlane : 100 });
+    // mat4.rotate(webgl.mvMatrix, getElapsedSeconds(), [ 1, 1, 1 ]);
 
     var normalMatrix = mat3.create();
     mat4.toInverseMat3(webgl.mvMatrix, normalMatrix);
@@ -157,31 +161,15 @@ var Spikes = (function () {
     gl.drawElements(gl.TRIANGLES, 6 * (_grid.xsize-1) * (_grid.ysize-1), gl.UNSIGNED_SHORT, 0);
 
     //
-    _drawer.camera(webgl.pMatrix, webgl.mvMatrix);
     _drawNormals();
 
     webgl.popModelView();
   }
 
   function _drawNormals() {
-    for (var k=0; k < _vbo.normals.length/3; k++) {
-      var i = 3 * k;
-      var n = [
-        _vbo.normals[i+0],
-        _vbo.normals[i+1],
-        _vbo.normals[i+2]
-      ];
-      var p = [
-        _vbo.positions[i+0],
-        _vbo.positions[i+1],
-        _vbo.positions[i+2]
-      ];
-      var q = [
-        p[0] + .7 * n[0],
-        p[1] + .7 * n[1],
-        p[2] + .7 * n[2]
-      ];
-      _drawer.line(p, q, [1,1,1,1], [.8,.4,.4,1]);
+    for (var k = 0; k < _vbo.normals.length; k++) {
+      var n = _vbo.normals[k];
+      var p = _vbo.positions[k];
     }
   }
 });
@@ -262,8 +250,10 @@ var Drawer = (function (gl, shader) {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(col1.concat(col2)), gl.STATIC_DRAW);
     gl.vertexAttribPointer(aColor, 4, gl.FLOAT, false, 0, 0);
 
+
     var uPMatrix = gl.getUniformLocation(shader, "uPMatrix");
     var uMVMatrix = gl.getUniformLocation(shader, "uMVMatrix");
+
     gl.uniformMatrix4fv(uPMatrix, false, _pMatrix);
     gl.uniformMatrix4fv(uMVMatrix, false, _mvMatrix);
 

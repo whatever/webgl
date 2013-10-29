@@ -5,27 +5,10 @@ var app = function (_canvasId) {
   var _spikes = Spikes();
   var _is = { running : true };
   var _isRunning = true;
-  // ...
   var _pressedKeys = {};
-  
   var _gui = new dat.GUI();
-  var _controls = {
-    z_translate : 4.,
-    textureNumber : 0,
-    lighting_x : 0.1,
-    lighting_y : 0.1,
-    lighting_z : 0.1,
-    lightingDirection : [ -1, -.3, -1 ],
-    ambientLightColor : [ .35 * 255, .30 * 255, .27 * 255 ],
-    directionalLightColor : [ .6 * 255, .6 * 255, .6 * 255 ],
-    alpha : 1.,
-    transparency : true
-  };
-  _gui.add(_controls, "z_translate", 2., 15);
-  _gui.add(_controls, "lighting_x", -1., 1.);
-  _gui.add(_controls, "lighting_y", -1., 1.);
-  _gui.add(_controls, "lighting_z", -1., 1.);
-
+  var _controls = { };
+ 
   document.onkeyup = function (ev) {
     _pressedKeys[ev.keyCode] = false;
   }
@@ -35,6 +18,8 @@ var app = function (_canvasId) {
   }
 
   var _passShaderProg = undefined;
+  var _simpleShaderProg = undefined;
+  var _drawer = undefined;
 
   //    Return actual object
   return {
@@ -61,17 +46,20 @@ var app = function (_canvasId) {
   }
 
   function setup() {
-    console.log("~~~~");
-
     // Viewport
     _gl.viewport(0, 0, _canvas.width, _canvas.height);
     // Shader program
     _passShaderProg = webgl.createProgramFromIds(gl, "pass-vert", "pass-frag");
+    _simpleShaderProg = webgl.createProgramFromIds(gl, "vert-simple", "frag-simple");
+
     // Clear values
     _gl.clearColor(.25, .22, .2, 1);
     _gl.clearDepth(1.0);
 
     _gl.enable(_gl.DEPTH_TEST);
+    _gl.enable(_gl.BLEND);
+
+    _drawer = new Drawer(_gl, _simpleShaderProg);
   }
 
   function update() {
@@ -86,7 +74,7 @@ var app = function (_canvasId) {
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    var t = getElapsedSeconds() / 1.5;
+    var t = getElapsedSeconds() * 1.5;
 
     webgl.perspectiveMatrix({
       fieldOfView : 45,
@@ -96,14 +84,18 @@ var app = function (_canvasId) {
     });
 
     mat4.identity(webgl.mvMatrix);
-    mat4.translate(webgl.mvMatrix, [ 0, 0, -_controls.z_translate ]);
-    mat4.rotate(webgl.mvMatrix, t, [ 1, 0, 0 ]);
+    mat4.translate(webgl.mvMatrix, [ 0, 0, -9 ]);
 
     // Apply shader
-    gl.useProgram(_passShaderProg);
+    gl.useProgram(_simpleShaderProg);
+
+    //
+    gl.enable(gl.BLEND);
+    _drawer.camera(webgl.pMatrix, webgl.mvMatrix);
+    _drawer.line([ 0, 0, 0 ], [ 1, Math.sin(t), -1 ], [ 1, 1, .8, 1. ], [ 0, 1, 1, 1 ]);
+    _drawer.line([ 0, 1, 0 ], [ -1, -Math.sin(t), .5 ], [ 1, 1, .8, 1. ], [ 0, 1, 1, 1 ]);
 
     // ...
-    _spikes.draw(_passShaderProg);
   }
 
   function updatePosition() {
