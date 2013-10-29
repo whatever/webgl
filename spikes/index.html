@@ -1,20 +1,54 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>09 : multi-object drawing</title>
+    <title>xx : plane of spikes</title>
     <!-- Vertex Shader -->
     <script src="glMatrix-0.9.5.min.js" type="text/javascript"></script>
     <script src="dat.gui.min.js" type="text/javascript"></script>
     <script src="Spikes.js" type="text/javascript"></script>
+    <script type="x-shader/x-vertex" id="vert-simple">
+      attribute vec3 aPosition;
+      attribute vec4 aColor;
+      uniform mat4 uPMatrix;
+      uniform mat4 uMVMatrix;
+      varying vec4 vColor;
+      void main () {
+        vColor = aColor;
+        gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.);
+      }
+    </script>
+    <script type="x-shader/x-fragment" id="frag-simple">
+      precision mediump float;
+      varying vec4 vColor;
+      void main() {
+        gl_FragColor = vColor;
+      }
+    </script>
     <script type="x-shader/x-vertex" id="pass-vert">
       attribute vec3 aPosition;
       attribute vec4 aColor;
+      attribute vec3 aNormal;
 
       uniform mat4 uMVMatrix;
       uniform mat4 uPMatrix;
+      uniform mat3 uNMatrix;
+
+      uniform vec3 uLightDir;
+      uniform vec3 uAmbientCol;
+      uniform vec3 uDirectionalCol;
+
+      varying vec4 vColor;
+      varying vec3 vNormal;
+      varying vec3 vLightDir;
+      varying vec3 vLightWeighting;
 
       void main() {
+        vec3 transformedNormal = uNMatrix * aNormal;
+        float directionalLightWeighting = max(dot(transformedNormal, uLightDir), 0.0);
+        vLightWeighting = uAmbientCol + uDirectionalCol * directionalLightWeighting;
         vColor = aColor;
+        vNormal = aNormal;
+        vLightDir = uLightDir;
         gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
       }
     </script>
@@ -22,14 +56,19 @@
     <script type="x-shader/x-fragment" id="pass-frag">
       precision mediump float;
       varying vec4 vColor;
+      varying vec3 vNormal;
+      varying vec3 vLightDir;
+      varying vec3 vLightWeighting;
       void main() {
-        gl_FragColor = vColor;
+        vec4 color = vColor;
+        gl_FragColor = vec4(color.rgb * vLightWeighting, color.a);
       }
     </script>
     <script src="webgl.js" type="text/javascript"></script>
     <script src="app.js" type="text/javascript"></script>
     <script type="text/javascript">
       var gl;
+
       function main() {
         canvas = document.getElementById("pleasefeeldeepthanks");
         gl = canvas.getContext("webgl");

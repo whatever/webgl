@@ -16,8 +16,10 @@ var webgl = (function () {
       var shader = gl.createShader(shaderType);
       gl.shaderSource(shader, shaderSource);
       gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
         console.log("** SHADER ERROR **");
+        console.log(gl.getShaderInfoLog(shader));
+      }
       return shader;
     },
     /**
@@ -104,6 +106,15 @@ var webgl = (function () {
     popMatrices : function () {
       popModelView();
       this.pMatrix = _pMatrixStack.pop();
+    },
+    /**
+     * Set Matrices
+     */
+    setMatrices : function (camera) {
+      if (camera.mvMatrix !== undefined) {
+      }
+      if (camera.pMatrix !== undefined) {
+      }
     }
   };
 })();
