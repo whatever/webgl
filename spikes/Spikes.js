@@ -135,7 +135,7 @@ var Spikes = (function () {
 
     // Lighting Vectors
     var t = getElapsedSeconds();
-    var lightDir = vec3.normalize([ 0, Math.cos(t), Math.sin(t) ]);
+    var lightDir = vec3.normalize([ 0, 0, 1 ]);
     gl.uniform3fv(uLightDir, lightDir);
     gl.uniform3f(uAmbientCol, 0, 1, 1);
     gl.uniform3f(uDirectionalCol, 0, 1, 1);
