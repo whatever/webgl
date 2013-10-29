@@ -1,11 +1,11 @@
 var Spikes = (function () {
   var _grid = {
-    xmin : -.6,
-    xmax : .6,
-    ymin : -.6,
-    ymax : .6,
-    xsize : 23,
-    ysize : 3
+    xmin : -1.,
+    xmax : 1.,
+    ymin : -1.,
+    ymax : 1.,
+    xsize : 12,
+    ysize : 12
   };
 
   var _vbo = {
@@ -32,7 +32,7 @@ var Spikes = (function () {
   function _init() {
     var positions = [], normals = [], colors = [], indices = [];
     var f = function (u, v) {
-      return Math.sin(2 * u);
+      return Math.sin(2 * u) - v * v;
     }
     for (var i = 0; i < _grid.xsize * _grid.ysize; i++) {
       var tx = (i % _grid.xsize)/(_grid.xsize - 1);
@@ -43,7 +43,7 @@ var Spikes = (function () {
       positions.push(x);
       positions.push(y);
       positions.push(height);
-      colors.push(1);
+      colors.push(0);
       colors.push(1);
       colors.push(1);
       colors.push(1);
@@ -125,7 +125,7 @@ var Spikes = (function () {
     var uNMatrix = gl.getUniformLocation(shader, "uNMatrix");
 
     var uLightDir = gl.getUniformLocation(shader, "uLightDir");
-    var uAmbientCol = gl.getUniformLocation(shader, "uAmbientCoc");;
+    var uAmbientCol = gl.getUniformLocation(shader, "uAmbientCol");;
     var uDirectionalCol = gl.getUniformLocation(shader, "uDirectionalCol");;
 
     // Set camera matrices
@@ -137,8 +137,8 @@ var Spikes = (function () {
     var t = getElapsedSeconds();
     var lightDir = vec3.normalize([ 0, 0, 1 ]);
     gl.uniform3fv(uLightDir, lightDir);
-    gl.uniform3f(uAmbientCol, 0, 1, 1);
-    gl.uniform3f(uDirectionalCol, 0, 1, 1);
+    gl.uniform3f(uAmbientCol, .25, .25, .25);
+    gl.uniform3f(uDirectionalCol, 1, 1, 1);
 
     // Specify position attribute
     gl.bindBuffer(gl.ARRAY_BUFFER, _vbo.pbuffer);
