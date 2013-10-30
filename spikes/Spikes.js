@@ -5,7 +5,7 @@ var Spikes = (function () {
     ymin : -1.,
     ymax : 1.,
     xsize : 12,
-    ysize : 12
+    ysize : 4
   };
 
   var _vbo = {
@@ -32,7 +32,7 @@ var Spikes = (function () {
   function _init() {
     var positions = [], normals = [], colors = [], indices = [];
     var f = function (u, v) {
-      return Math.sin(2 * u) - v * v;
+      return Math.sin(1.5 * u) + v * v;
     }
     for (var i = 0; i < _grid.xsize * _grid.ysize; i++) {
       var tx = (i % _grid.xsize)/(_grid.xsize - 1);
@@ -60,16 +60,13 @@ var Spikes = (function () {
       }
     }
 
-    var dx = (_grid.xmax - _grid.xmin) / _grid.xsize / 2;
-    var dy = (_grid.ymax - _grid.ymin) / _grid.ysize / 2;
+    var dx = (_grid.xmax - _grid.xmin) / _grid.xsize;
+    var dy = (_grid.ymax - _grid.ymin) / _grid.ysize;
 
     for (var k=0; k < positions.length/3; k++) {
-      var i = 3 * k;
-
-      var x = positions[i+0];
-      var y = positions[i+1];
-      var z = positions[i+2];
-
+      var x = positions[3*k+0];
+      var y = positions[3*k+1];
+      var z = positions[3*k+2];
       var n = {
         x : (f(x + dx, y) - f(x, y))/dx,
         y : (f(x, y + dy) - f(x, y))/dy,
@@ -194,7 +191,8 @@ var Drawer = (function (gl, shader) {
   return {
     shader : _shader,
     camera : _camera,
-    line : _line
+    line : _line,
+    lines : _lines
   };
 
   var _pMatrix = new Float32Array([
@@ -270,5 +268,33 @@ var Drawer = (function (gl, shader) {
     gl.drawArrays(gl.LINE_STRIP, 0, 2);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  }
+
+  /**
+   * Draw a Set of Lines
+   * @param {!vector3f} u a set of three float values specifying where to draw the lines from
+   * @param {!vector3f} v a set of three float values specifying where to draw the lines to
+   * @return {undefined} undefined
+   */
+  function _lines (u, v, col1, col2) {
+    var U = [];
+    var V = [];
+
+    if (u.length != v.length) {
+      throw "`u` and `v` size mismatch";
+    }
+
+    for (var k = 0; k < u.length; k++) {
+      if (u[k].length == 3) {
+        U.append(u[k][0]);
+        U.append(u[k][1]);
+        U.append(u[k][2]);
+      }
+      if (v[k].length == 3) {
+        V.append(v[k][0]);
+        V.append(v[k][1]);
+        V.append(v[k][2]);
+      }
+    }
   }
 });
