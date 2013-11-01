@@ -69,6 +69,7 @@
     <script type="text/javascript">
       var gl;
 
+
       function main() {
         canvas = document.getElementById("pleasefeeldeepthanks");
         options = {
@@ -80,8 +81,8 @@
 
         gl.enable(gl.DEPTH_TEST);
         gl.enable(gl.BLEND);
-        gl.blendFunc(gl.ONE, gl.ONE);
-        gl.clearColor(0, 1, 1, 1);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+        gl.clearColor(.25, .22, .2, 1);
         gl.clearDepth(1.0);
 
         var simpleShader = webgl.createProgramFromIds(gl, "vert-simple", "frag-simple");
@@ -90,56 +91,38 @@
         webgl.perspectiveMatrix({ fieldOfView : 45, aspectRatio : 1, nearPlane : .1, farPlane : 100 });
         webgl.mvMatrix = mat4.create();
         mat4.identity(webgl.mvMatrix);
-        mat4.translate(webgl.mvMatrix, [ 0, 0, -2 ]);
-        // mat4.rotate(webgl.mvMatrix, 1, [ 0, -.5, 0 ]);
+        mat4.translate(webgl.mvMatrix, [ 1, 0, -9 ]);
 
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         drawer.camera(webgl.pMatrix, webgl.mvMatrix);
 
-        var col1 = [ 1, 1, 1, .9 ];
-        var col2 = [ 1, 1, 1, .9 ];
         _drawCircle();
-
-        console.log("height = " + canvas.height);
-
-        canvas.addEventListener("click", function () {
-          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-          _drawCircle();
-          window.open(canvas.toDataURL("image/gif"), "nw", "toolbar=no,titlebar=no,scrollbars=no,resizable=no,menubar=no,height=" + canvas.height + ",width=" + canvas.width);
-        });
 
         function _drawCircle () {
           var t = 0.;
-          var previous = [ 1, 0, 0 ];
+          var previous = [ 0, 1, 0 ];
 
-          var dt = 2 * Math.PI / 400;
-          dt = .11;
-          var shift = {
-            x : .3,
-            y : .3,
-            z : 0
-          };
-          var lw = 3.1;
-          for (var i = 1; i < 9000; i++) {
-            t += dt + .58 * dt * Math.random();
-            gl.lineWidth(lw);
-            lw += .07 * (2 * Math.random() - 1);
+          for (var i = 0; i < 460; i++) {
+            t = 2. * Math.PI * i/199.;
             var p = [
-              previous[0] - dt * (Math.sin(t)),
-              previous[1] + dt * (Math.cos(t) + 0),
-              previous[2] - dt * .01 * Math.random()
+              -Math.sin(t),
+              Math.cos(t),
+              0
             ];
+
+            var col1 = [ 0, 1, 1, .0 ];
+            var col2 = [ 1, .98, .95, .7 ];
 
             drawer.line(previous, p, col1, col2);
 
-            previous[0] = p[0];
-            previous[1] = p[1];
-            previous[2] = p[2];
+            previous[0] += p[0] + Math.cos(Math.random())/9;
+            previous[1] += p[1] + Math.sin(Math.random())/9;
+            previous[2] += p[2] - .1;
           }
-          console.log("t = " + t);
         }
+        redirectoToDataUrl();
       }
 
       /**
@@ -147,9 +130,9 @@
        * ...
        * @return {undefined} undefined
        */
-      function redirectToDataUrl () {
+      function redirectoToDataUrl () {
         var canvas = document.getElementById("pleasefeeldeepthanks");
-        window.location.href = canvas.toDataURL('image/png');
+        // window.location.href = canvas.toDataURL('image/png');
       }
 
       /**
@@ -186,7 +169,6 @@
   </head>
   <body>
     <!-- Canvas -->
-    <div id="container"><canvas width="600" height="600" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas></div>
-    <div id="end"></div>
+    <div id="container"><canvas width="800" height="800" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas></div>
   </body>
 </html>
