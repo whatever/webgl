@@ -66,8 +66,9 @@
       varying vec2 vTexCoord;
       void main() {
         vec4 color = vColor;
-        float w = (1. + sin(90. * vTexCoord.y));
-        w = w > .5 ? 1. : .5;
+        float d = length(vTexCoord);
+        float w = (1. + sin(90. * d));
+        w = 1.;
         gl_FragColor = vec4(color.rgb, w * color.a);
       }
     </script>
@@ -75,24 +76,19 @@
     <script src="app.js" type="text/javascript"></script>
     <script type="text/javascript">
       var gl;
-
       function main() {
         canvas = document.getElementById("pleasefeeldeepthanks");
         gl = canvas.getContext("webgl");
-
         var svvim = app("pleasefeeldeepthanks");
         svvim.init();
         svvim.loop();
-
       }
-
       var getElapsedSeconds = (function () {
         var _startTime = + new Date();
         return function () {
           return (new Date() - _startTime) / 1000.;
         };
       })();
-
       window.onload = main;
     </script>
     <style>
@@ -110,10 +106,25 @@
         height: 100%;
         margin: 0 auto;
       }
+      #pleasefeeldeepthanks {
+        position: relative;
+      }
+      .overlay {
+        height: 100%;
+        position: absolute;
+        top: 30%;
+        left: 0;
+        color: black;
+        width: 80%;
+        text-align: center;
+      }
     </style>
   </head>
   <body>
     <!-- Canvas -->
-    <div id="container"><canvas width="700" height="700" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas></div>
+    <div id="container">
+      <canvas width="700" height="700" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas>
+      <div class="overlay" style="height: 80%;"><img style="width: 50%;" src="together_logo_trans.png"></div>
+    </div>
   </body>
 </html>

@@ -66,7 +66,8 @@
       varying vec2 vTexCoord;
       void main() {
         vec4 color = vColor;
-        float w = (1. + sin(90. * vTexCoord.y));
+        float d = length(vTexCoord);
+        float w = (1. + sin(400. * d));
         w = w > .5 ? 1. : .5;
         gl_FragColor = vec4(color.rgb, w * color.a);
       }
@@ -110,10 +111,25 @@
         height: 100%;
         margin: 0 auto;
       }
+      #pleasefeeldeepthanks {
+        position: relative;
+      }
+      .overlay {
+        height: 100%;
+        position: absolute;
+        top: 35%;
+        left: 0;
+        color: black;
+        width: 80%;
+        text-align: center;
+      }
     </style>
   </head>
   <body>
     <!-- Canvas -->
-    <div id="container"><canvas width="700" height="700" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas></div>
+    <div id="container">
+      <canvas width="700" height="700" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas>
+      <div class="overlay" style="height: 80%;"><img style="width: 50%;" src="together_logo_trans.png"></div>
+    </div>
   </body>
 </html>

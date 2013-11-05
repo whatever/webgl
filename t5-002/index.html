@@ -110,10 +110,25 @@
         height: 100%;
         margin: 0 auto;
       }
+      #pleasefeeldeepthanks {
+        position: relative;
+      }
+      .overlay {
+        height: 100%;
+        position: absolute;
+        top: 30%;
+        left: 0;
+        color: black;
+        width: 80%;
+        text-align: center;
+      }
     </style>
   </head>
   <body>
     <!-- Canvas -->
-    <div id="container"><canvas width="700" height="700" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas></div>
+    <div id="container">
+      <canvas width="700" height="700" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas>
+      <div class="overlay" style="height: 80%;"><img style="width: 50%;" src="together_logo_trans.png"></div>
+    </div>
   </body>
 </html>

@@ -96,7 +96,7 @@ var app = function (_canvasId) {
     mat4.identity(webgl.mvMatrix);
     mat4.translate(webgl.mvMatrix, [ 0, 0, -_controls.z_translate ]);
     mat4.rotate(webgl.mvMatrix, Math.PI/2, [ 1, 0, 0 ]);
-    mat4.rotate(webgl.mvMatrix, t, [ 0, 0, -1 ]);
+    mat4.rotate(webgl.mvMatrix, .7, [ 0, 0, -1 ]);
     gl.useProgram(_passShaderProg);
     for (var i = 0; i < _planes.length; i++) {
       _planes[i].draw(_passShaderProg);
