@@ -2,15 +2,15 @@
 <html>
   <head>
     <title>xx : plane of spikes</title>
-    <!-- Vertex Shader -->
     <script src="glMatrix-0.9.5.min.js" type="text/javascript"></script>
     <script src="dat.gui.min.js" type="text/javascript"></script>
     <script src="Plane.js" type="text/javascript"></script>
+    <script src="TogetherLogo.js" type="text/javascript"></script>
     <script src="Drawer.js" type="text/javascript"></script>
+    <!-- SIMPLE VERT -->
     <script type="x-shader/x-vertex" id="vert-simple">
       attribute vec3 aPosition;
       attribute vec4 aColor;
-      attribute vec2 aTexCoord;
       uniform mat4 uPMatrix;
       uniform mat4 uMVMatrix;
       varying vec4 vColor;
@@ -21,6 +21,7 @@
         gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.);
       }
     </script>
+    <!-- SIMPLE FRAG -->
     <script type="x-shader/x-fragment" id="frag-simple">
       precision mediump float;
       varying vec4 vColor;
@@ -28,7 +29,8 @@
         gl_FragColor = vColor;
       }
     </script>
-    <script type="x-shader/x-vertex" id="pass-vert">
+    <!-- PASS VERT -->
+    <script type="x-shader/x-vertex" id="vert-pass">
       attribute vec3 aPosition;
       attribute vec4 aColor;
       attribute vec3 aNormal;
@@ -44,7 +46,6 @@
       varying vec3 vLightDir;
       varying vec3 vLightWeighting;
       varying vec2 vTexCoord;
-
       void main() {
         vec3 transformedNormal = uNMatrix * aNormal;
         float directionalLightWeighting = max(dot(transformedNormal, uLightDir), 0.0);
@@ -56,8 +57,8 @@
         gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
       }
     </script>
-    <!-- Fragment Shader -->
-    <script type="x-shader/x-fragment" id="pass-frag">
+    <!-- PASS FRAG -->
+    <script type="x-shader/x-fragment" id="frag-pass">
       precision mediump float;
       varying vec4 vColor;
       varying vec3 vNormal;
@@ -67,13 +68,63 @@
       void main() {
         vec4 color = vColor;
         float d = length(vTexCoord);
-        float w = (1. + sin(90. * d));
-        w = 1.;
-        gl_FragColor = vec4(color.rgb, w * color.a);
+        float w = 1.;
+        gl_FragColor = vColor;
+      }
+    </script>
+    <!-- VERT: Texture + Shadow -->
+    <script type="x-shader/x-vertex" id="vert-mask">
+      attribute vec3 aPosition;
+      attribute vec4 aColor;
+      attribute vec3 aNormal;
+      attribute vec2 aTexCoord;
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+      uniform mat3 uNMatrix;
+      uniform vec3 uLightDir;
+      uniform vec3 uAmbientCol;
+      uniform vec3 uDirectionalCol;
+      varying vec2 vTexCoord;
+      varying vec4 vColor;
+      varying vec3 vNormal;
+      varying vec3 vLightingDirection;
+      varying vec3 vLightWeighting;
+      void main() {
+        vec3 transformedNormal = uNMatrix * aNormal;
+        float directionalLightWeighting = max(dot(transformedNormal, uLightDir), 0.0);
+        vLightWeighting = uAmbientCol + uDirectionalCol * directionalLightWeighting;
+        // Compute on-screen position
+        gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
+        vColor = aColor;
+        vNormal = aNormal;
+        vLightingDirection = uLightDir;
+        vTexCoord = aTexCoord;
+      }
+    </script>
+    <!-- FRAG: Texture + Shadow -->
+    <script type="x-shader/x-fragment" id="frag-mask">
+      precision mediump float;
+      varying vec2 vTexCoord;
+      varying vec4 vColor;
+      varying vec3 vNormal;
+      varying vec3 vLightWeighting;
+      uniform sampler2D uSamplerTexture;
+      float luminance (vec3 rgb) {
+        return dot(vec3(0.2126, 0.7152, 0.0722), rgb);
+      }
+      void main() {
+        vec4 textureColor = texture2D(uSamplerTexture, vTexCoord.xy);
+        gl_FragColor.rgb = vec3(0);
+        gl_FragColor.a = (1.-luminance(textureColor.rgb));
       }
     </script>
     <script src="webgl.js" type="text/javascript"></script>
     <script src="app.js" type="text/javascript"></script>
+
+    <!--
+          MAIN SCRIPT
+          ***********
+    -->
     <script type="text/javascript">
       var gl;
       function main() {
@@ -124,7 +175,7 @@
     <!-- Canvas -->
     <div id="container">
       <canvas width="700" height="700" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas>
-      <div class="overlay" style="height: 80%;"><img style="width: 50%;" src="together_logo_trans.png"></div>
+      <!-- <div class="overlay" style="height: 80%;"><img style="width: 50%;" src="together_logo_trans.png"></div> -->
     </div>
   </body>
 </html>
