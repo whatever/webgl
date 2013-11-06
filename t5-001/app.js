@@ -23,7 +23,6 @@ var app = function (_canvasId) {
   // ...
   var _pressedKeys = {};
   
-  var _gui = new dat.GUI();
   var _controls = {
     z_translate : 4.,
     textureNumber : 0,
@@ -36,11 +35,13 @@ var app = function (_canvasId) {
     alpha : 1.,
     transparency : true
   };
+  /*
+  var _gui = new dat.GUI();
   _gui.add(_controls, "z_translate", 2., 15);
   _gui.add(_controls, "lighting_x", -1., 1.);
   _gui.add(_controls, "lighting_y", -1., 1.);
   _gui.add(_controls, "lighting_z", -1., 1.);
-
+  */
   document.onkeyup = function (ev) {
     _pressedKeys[ev.keyCode] = false;
   }

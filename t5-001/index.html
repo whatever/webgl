@@ -3,10 +3,12 @@
   <head>
     <title>xx : plane of spikes</title>
     <script src="glMatrix-0.9.5.min.js" type="text/javascript"></script>
+    <script src="live.js" type="text/javascript"></script>
     <script src="dat.gui.min.js" type="text/javascript"></script>
     <script src="Plane.js" type="text/javascript"></script>
     <script src="TogetherLogo.js" type="text/javascript"></script>
     <script src="Drawer.js" type="text/javascript"></script>
+    <script src="Wave.js" type="text/javascript"></script>
     <!-- SIMPLE VERT -->
     <script type="x-shader/x-vertex" id="vert-simple">
       attribute vec3 aPosition;
@@ -131,8 +133,12 @@
         canvas = document.getElementById("pleasefeeldeepthanks");
         gl = canvas.getContext("webgl");
         var svvim = app("pleasefeeldeepthanks");
-        svvim.init();
-        svvim.loop();
+        var wave = new Wave("wavethanks");
+        // wave.update();
+        // wave.draw();
+        wave.loop();
+        // svvim.init();
+        // svvim.loop();
       }
       var getElapsedSeconds = (function () {
         var _startTime = + new Date();
@@ -153,12 +159,13 @@
         width: 800px;
         height: 100%;
       }
-      #container canvas {
-        height: 100%;
-        margin: 0 auto;
+      #wavethanks {
+        background-color: rgba(0, 0, 0, .2);
       }
       #pleasefeeldeepthanks {
         position: relative;
+        height: 100%;
+        margin: 0 auto;
       }
       .overlay {
         height: 100%;
@@ -174,6 +181,7 @@
   <body>
     <!-- Canvas -->
     <div id="container">
+      <canvas width="300" height="300" id="wavethanks">WebGL is unsupported.</canvas>
       <canvas width="700" height="700" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas>
       <!-- <div class="overlay" style="height: 80%;"><img style="width: 50%;" src="together_logo_trans.png"></div> -->
     </div>
