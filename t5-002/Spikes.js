@@ -149,7 +149,6 @@ var Spikes = (function () {
     // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, _vbo.ibuffer);
     // gl.drawElements(gl.TRIANGLES, 6 * (_grid.xsize-1) * (_grid.ysize-1), gl.UNSIGNED_SHORT, 0);
 
-    console.log("num tiles = " + _grid.tiles);
     gl.drawArrays(gl.TRIANGLES, 0, 3*_grid.tiles);
 
     //
