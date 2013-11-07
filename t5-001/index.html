@@ -165,15 +165,15 @@
       vec4 solidColor (vec2 p, float weight) {
         vec4 col;
         col.rgb = vColor.rgb;
-        col.a = weight > .7 ? .7 : weight;
+        col.a = weight;
         return col;
       }
       vec4 moirePattern (vec2 p, float weight) {
         float g = .95 * .5 * (1. + sin(900. * p.x) + cos(900. * p.y));
-        g = g > .7 ? .7 : g;
+        g = g > .5 ? .5 : g;
         vec4 col;
         col.rgb = vColor.rgb;
-        col.a = .5 * weight;
+        col.a = .40 * weight;
         return col;
       }
       void main() {

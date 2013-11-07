@@ -4,11 +4,11 @@ var app = function (_canvasId) {
 
   // Planes
   var _planes = [
-    MaskedPlane([0, -.40, 0], [3.0, 3.0, 3.0], { color : [1, 1, 1, .20], mask : "together-images/-2_TRANS.png", pattern : "together-images/-2_PATTERN.png" }),
-    MaskedPlane([0, -.20, 0], [3.0, 3.0, 3.0], { color : [1, 1, 0, .20], mask : "together-images/-1_TRANS.png", pattern : "together-images/-1_PATTERN.png" }),
-    MaskedPlane([0, -.00, 0], [3.0, 3.0, 3.0], { color : [1, 0, 1, .20], mask : "together-images/-0_TRANS.png", pattern : "together-images/+0_PATTERN.png" }),
-    MaskedPlane([0, +.20, 0], [3.0, 3.0, 3.0], { color : [1, 1, 1, .20], mask : "together-images/+1_TRANS.png", pattern : "together-images/+1_PATTERN.png" }),
-    MaskedPlane([0, +.40, 0], [3.0, 3.0, 3.0], { color : [0, 1, 1, .20], mask : "together-images/+2_TRANS.png", pattern : "together-images/+2_PATTERN.png" }),
+    MaskedPlane([0, -.30, 0], [4.0, 4.0, 4.0], { color : [1, 1, 1, .20], mask : "together-images/-2_TRANS.png", pattern : "together-images/-2_PATTERN.png" }),
+    MaskedPlane([0, -.15, 0], [4.0, 4.0, 4.0], { color : [1, 1, 0, .20], mask : "together-images/-1_TRANS.png", pattern : "together-images/-1_PATTERN.png" }),
+    MaskedPlane([0, -.00, 0], [4.0, 4.0, 4.0], { color : [1, 0, 1, .20], mask : "together-images/-0_TRANS.png", pattern : "together-images/+0_PATTERN.png" }),
+    MaskedPlane([0, +.15, 0], [4.0, 4.0, 4.0], { color : [1, 1, 1, .20], mask : "together-images/+1_TRANS.png", pattern : "together-images/+1_PATTERN.png" }),
+    MaskedPlane([0, +.30, 0], [4.0, 4.0, 4.0], { color : [0, 1, 1, .20], mask : "together-images/+2_TRANS.png", pattern : "together-images/+2_PATTERN.png" }),
   ];
   // Logo
   var _logo = new TogetherLogo(
