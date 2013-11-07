@@ -7,6 +7,7 @@
 var Plane = (function (_pos, _dim, _opts) {
   _opts = _opts || {};
   _opts.color = _opts.color !== undefined ? _opts.color : [ 1, 1, 1, 1 ];
+  _opts.mask = _opts.mask !== undefined ? _opts.mask : undefined;
   var _plane = {
     x : _pos[0] ? _pos[0] : 0,
     y : _pos[1] ? _pos[1] : 0,
@@ -33,8 +34,8 @@ var Plane = (function (_pos, _dim, _opts) {
 
   _init();
 
-  var _simpleShader = webgl.createProgramFromIds(gl, "vert-simple", "frag-simple");
-  var _drawer = new Drawer(gl, _simpleShader);
+  // var _simpleShader = webgl.createProgramFromIds(gl, "vert-simple", "frag-simple");
+  // var _drawer = new Drawer(gl, _simpleShader);
 
   return {
     _about : "transparency plane for together fest 5 - va.0.c",
@@ -142,6 +143,7 @@ var Plane = (function (_pos, _dim, _opts) {
   }
 
   function _draw(shader) {
+    gl.useProgram(shader);
     webgl.pushModelView();
     webgl.perspectiveMatrix({ fieldOfView : 45, aspectRatio : 1, nearPlane : .1, farPlane : 100 });
 
@@ -198,7 +200,7 @@ var Plane = (function (_pos, _dim, _opts) {
     gl.drawArrays(gl.TRIANGLES, 0, 3*_grid.tiles);
 
     // ...
-    _drawer.camera(webgl.pMatrix, webgl.mvMatrix);
+    // _drawer.camera(webgl.pMatrix, webgl.mvMatrix);
 
     webgl.popModelView();
   }

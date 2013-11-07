@@ -5,7 +5,8 @@
     <script src="glMatrix-0.9.5.min.js" type="text/javascript"></script>
     <script src="live.js" type="text/javascript"></script>
     <script src="dat.gui.min.js" type="text/javascript"></script>
-    <script src="Plane.js" type="text/javascript"></script>
+    <!-- <script src="Plane.js" type="text/javascript"></script> -->
+    <script src="MaskedPlane.js" type="text/javascript"></script>
     <script src="TogetherLogo.js" type="text/javascript"></script>
     <script src="Drawer.js" type="text/javascript"></script>
     <script src="Wave.js" type="text/javascript"></script>
@@ -116,8 +117,72 @@
       }
       void main() {
         vec4 textureColor = texture2D(uSamplerTexture, vTexCoord.xy);
-        gl_FragColor.rgb = vec3(0);
-        gl_FragColor.a = (1.-luminance(textureColor.rgb));
+        gl_FragColor.rgb = vColor.rgb;
+        gl_FragColor.a = pow(luminance(textureColor.rgb), 0.9);
+      }
+    </script>
+    <!-- VERT: Transparency Mask + Pattern Mask -->
+    <script type="x-shader/x-vertex" id="vert-pattern-mask">
+      attribute vec3 aPosition;
+      attribute vec4 aColor;
+      attribute vec3 aNormal;
+      attribute vec2 aTexCoord;
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+      uniform mat3 uNMatrix;
+      uniform vec3 uLightDir;
+      uniform vec3 uAmbientCol;
+      uniform vec3 uDirectionalCol;
+      varying vec2 vTexCoord;
+      varying vec4 vColor;
+      varying vec3 vNormal;
+      varying vec3 vLightingDirection;
+      varying vec3 vLightWeighting;
+      void main() {
+        vec3 transformedNormal = uNMatrix * aNormal;
+        float directionalLightWeighting = max(dot(transformedNormal, uLightDir), 0.0);
+        vLightWeighting = uAmbientCol + uDirectionalCol * directionalLightWeighting;
+        gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
+        vColor = aColor;
+        vNormal = aNormal;
+        vLightingDirection = uLightDir;
+        vTexCoord = aTexCoord;
+      }
+    </script>
+    <!-- FRAG: Texture + Shadow -->
+    <script type="x-shader/x-fragment" id="frag-pattern-mask">
+      precision mediump float;
+      varying vec2 vTexCoord;
+      varying vec4 vColor;
+      varying vec3 vNormal;
+      varying vec3 vLightWeighting;
+      uniform sampler2D uMaskTexture;
+      uniform sampler2D uPatternTexture;
+
+      float luminance (vec3 rgb) {
+        return dot(vec3(0.2126, 0.7152, 0.0722), rgb);
+      }
+      vec4 solidColor (vec2 p, float weight) {
+        vec4 col;
+        col.rgb = vColor.rgb;
+        col.a = weight;
+        return col;
+      }
+      vec4 moirePattern (vec2 p, float weight) {
+        float g = .95 * .5 * (1. + sin(900. * p.x) + cos(900. * p.y));
+        vec4 col;
+        col.rgb = .3 * weight * g * vColor.rgb;
+        col.a = .3 * g * weight;
+        return col;
+      }
+      void main() {
+        vec4 maskColor = texture2D(uMaskTexture, vTexCoord.xy);
+        vec4 patternColor = texture2D(uPatternTexture, vTexCoord.xy);
+        float maskWeight = luminance(maskColor.rgb);
+        float patternWeight = luminance(patternColor.rgb);
+        vec4 solidColor = solidColor(vTexCoord, maskWeight);
+        vec4 moireColor = moirePattern(vTexCoord, patternWeight);
+        gl_FragColor = 1.0 * solidColor + 0.0 * moireColor;
       }
     </script>
     <script src="webgl.js" type="text/javascript"></script>
@@ -127,18 +192,17 @@
           MAIN SCRIPT
           ***********
     -->
+
     <script type="text/javascript">
       var gl;
       function main() {
         canvas = document.getElementById("pleasefeeldeepthanks");
         gl = canvas.getContext("webgl");
         var svvim = app("pleasefeeldeepthanks");
-        var wave = new Wave("wavethanks");
-        // wave.update();
-        // wave.draw();
-        wave.loop();
-        // svvim.init();
-        // svvim.loop();
+        // var wave = new Wave("wavethanks");
+        // wave.loop();
+        svvim.init();
+        svvim.loop();
       }
       var getElapsedSeconds = (function () {
         var _startTime = + new Date();
@@ -161,6 +225,7 @@
       }
       #wavethanks {
         background-color: rgba(0, 0, 0, .2);
+        padding: 10px;
       }
       #pleasefeeldeepthanks {
         position: relative;
@@ -181,7 +246,7 @@
   <body>
     <!-- Canvas -->
     <div id="container">
-      <canvas width="300" height="300" id="wavethanks">WebGL is unsupported.</canvas>
+      <!-- <canvas width="500" height="500" id="wavethanks">WebGL is unsupported.</canvas> -->
       <canvas width="700" height="700" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas>
       <!-- <div class="overlay" style="height: 80%;"><img style="width: 50%;" src="together_logo_trans.png"></div> -->
     </div>

@@ -4,9 +4,11 @@
  * @param {float[3]} _dim [ w, h, d ] size of the plane
  * @param {object} _opts miscelaneous options - color
  */
-var Plane = (function (_pos, _dim, _opts) {
+var MaskedPlane = (function (_pos, _dim, _opts) {
   _opts = _opts || {};
   _opts.color = _opts.color !== undefined ? _opts.color : [ 1, 1, 1, 1 ];
+  _opts.mask = _opts.mask !== undefined ? _opts.mask : undefined;
+  _opts.pattern = _opts.pattern !== undefined ? _opts.pattern : undefined;
   var _plane = {
     x : _pos[0] ? _pos[0] : 0,
     y : _pos[1] ? _pos[1] : 0,
@@ -30,11 +32,47 @@ var Plane = (function (_pos, _dim, _opts) {
     textureCoords: [],
     indices : []
   };
+  var _img = new Image();
+  var _imgLoaded = false;
+  var _texture = gl.createTexture();
+
+  _img.onload = function () {
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.bindTexture(gl.TEXTURE_2D, _texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, _img);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    _imgLoaded = true;
+  }
+
+  if (_opts.mask !== undefined && typeof _opts.mask === "string") {
+    _img.src = _opts.mask;
+  }
+
+  var _pattern = {
+    img      : new Image(),
+    texture  : gl.createTexture(),
+    isLoaded : false,
+  };
+
+  _pattern.img.onload = function () {
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.bindTexture(gl.TEXTURE_2D, _pattern.texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, _pattern.img);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    _pattern.isLoaded = true;
+  }
+
+  if (_opts.pattern !== undefined && typeof _opts.pattern === "string") {
+    _pattern.img.src = _opts.pattern;
+  }
 
   _init();
-
-  var _simpleShader = webgl.createProgramFromIds(gl, "vert-simple", "frag-simple");
-  var _drawer = new Drawer(gl, _simpleShader);
 
   return {
     _about : "transparency plane for together fest 5 - va.0.c",
@@ -102,14 +140,14 @@ var Plane = (function (_pos, _dim, _opts) {
     ];
 
     texCoords = [
+      // 1-3-4
+      0., 0.,
+      1., 1.,
+      0., 1.,
       // 1-3-2
       0., 0.,
       1., 1.,
       1., 0.,
-      // 1-3-4
-      0., 0.,
-      1., 1.,
-      0., 1.
     ];
 
     _grid.tiles = 2;
@@ -142,6 +180,10 @@ var Plane = (function (_pos, _dim, _opts) {
   }
 
   function _draw(shader) {
+    if (!_imgLoaded)
+      return;
+
+    gl.useProgram(shader);
     webgl.pushModelView();
     webgl.perspectiveMatrix({ fieldOfView : 45, aspectRatio : 1, nearPlane : .1, farPlane : 100 });
 
@@ -165,6 +207,8 @@ var Plane = (function (_pos, _dim, _opts) {
     var uLightDir = gl.getUniformLocation(shader, "uLightDir");
     var uAmbientCol = gl.getUniformLocation(shader, "uAmbientCol");;
     var uDirectionalCol = gl.getUniformLocation(shader, "uDirectionalCol");;
+    var uMaskTexture = gl.getUniformLocation(shader, "uMaskTexture");;
+    var uPatternTexture = gl.getUniformLocation(shader, "uPatternTexture");;
 
     // Set camera matrices
     gl.uniformMatrix4fv(uPMatrix, false, webgl.pMatrix);
@@ -194,11 +238,18 @@ var Plane = (function (_pos, _dim, _opts) {
     gl.bindBuffer(gl.ARRAY_BUFFER, _vbo.tbuffer);
     gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
 
+    // Attach texture for mask
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, _texture);
+    gl.uniform1i(uMaskTexture, 0);
+
+    // Attach texture for pattern
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, _pattern.texture);
+    gl.uniform1i(uPatternTexture, 1);
+
     // Draw as an array (unindexed)
     gl.drawArrays(gl.TRIANGLES, 0, 3*_grid.tiles);
-
-    // ...
-    _drawer.camera(webgl.pMatrix, webgl.mvMatrix);
 
     webgl.popModelView();
   }
