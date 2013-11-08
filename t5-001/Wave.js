@@ -3,28 +3,36 @@ var Wave = (function (id) { var _canvas = document.getElementById(id);
   var _isRunning = true;
 
   var ___ = {
-    a : 1.01,
-    b : 0.01,
-    c : 0.02,
+    a : 0.99,
+    b : 0.99,
+    c : 0.99,
     t : 1.
   };
 
   var __f = {};
 
   (function () {
+    // Coefficients for 
+    var a = [
+      +1.1427000, +0.4529600, +0.177530, -0.0259350, -0.1029100, -0.072436,
+      -0.0010508, +0.0460710, +0.042815, -0.0068287, -0.0252450, -0.029249,
+      -0.0084966, +0.0149650, +0.021478, -0.0088747, -0.0090245, -0.016406,
+      -0.0087387, +0.0052491, +0.012800, -0.0083665, -0.0026990, -0.010082,
+    ];
+    var offset = .75;
+    var scale  = 1/1.6;
+
     __f.a = function (x) {
       var t = getElapsedSeconds();
-      return Math.sqrt(1 - x * x);
+      return a[0] * Math.cos(0 * x) + a[1] * Math.cos(1 * x) + a[3] * Math.cos(3 * x) + a[8] * Math.cos(8 * x) + a[9] * Math.cos(9 * x);
     };
     __f.b = function (x) {
       var t = getElapsedSeconds();
-      return 0;
-      return Math.cos(2 * Math.PI * x + t);
+      return a[2] * Math.cos(2 * x) + a[5] * Math.cos(5 * x) + a[10] * Math.cos(10 * x) + a[11] * Math.cos(11 * x) + a[14] * Math.cos(14 * x);
     };
     __f.c = function (x) {
       var t = ___.t * getElapsedSeconds();
-      return 0;
-      return Math.sin(1 * Math.PI * x + t);
+      return a[4] * Math.cos(4 * x) + a[6] * Math.cos(6 * x) + a[7] * Math.cos(7 * x) + a[12] * Math.cos(12 * x) + a[13] * Math.cos(13 * x);
     };
   })();
 

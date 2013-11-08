@@ -200,10 +200,10 @@
         canvas = document.getElementById("pleasefeeldeepthanks");
         gl = canvas.getContext("webgl");
         var svvim = app("pleasefeeldeepthanks");
-        // var wave = new Wave("wavethanks");
-        // wave.loop();
-        svvim.init();
-        svvim.loop();
+        var wave = new Wave("wavethanks");
+        wave.loop();
+        // svvim.init();
+        // svvim.loop();
       }
       var getElapsedSeconds = (function () {
         var _startTime = + new Date();
@@ -221,6 +221,7 @@
       }
       body {
         background-color: black;
+        /**/
       }
       #container {
         margin: 0 auto;
@@ -250,7 +251,7 @@
   <body>
     <!-- Canvas -->
     <div id="container">
-      <!-- <canvas width="500" height="500" id="wavethanks">WebGL is unsupported.</canvas> -->
+      <canvas width="500" height="500" id="wavethanks">WebGL is unsupported.</canvas>
       <canvas width="700" height="700" id="pleasefeeldeepthanks">WebGL is unsupported.</canvas>
       <!-- <div class="overlay" style="height: 80%;"><img style="width: 50%;" src="together_logo_trans.png"></div> -->
     </div>
