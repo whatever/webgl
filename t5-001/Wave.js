@@ -21,18 +21,20 @@ var Wave = (function (id) { var _canvas = document.getElementById(id);
     ];
     var offset = .75;
     var scale  = 1/1.6;
+    a[0] = 0;
 
     __f.a = function (x) {
       var t = getElapsedSeconds();
-      return a[0] * Math.cos(0 * x) + a[1] * Math.cos(1 * x) + a[3] * Math.cos(3 * x) + a[8] * Math.cos(8 * x) + a[9] * Math.cos(9 * x);
+      return (offset + a[0] * Math.cos(0 * x) + a[1] * Math.cos(1 * x) + a[2] * Math.cos(2 * x) + a[3] * Math.cos(3 * x) + a[4] * Math.cos(4 * x)) * scale;
     };
     __f.b = function (x) {
       var t = getElapsedSeconds();
-      return a[2] * Math.cos(2 * x) + a[5] * Math.cos(5 * x) + a[10] * Math.cos(10 * x) + a[11] * Math.cos(11 * x) + a[14] * Math.cos(14 * x);
+      return (offset + a[5] * Math.cos(5 * x) + a[6] * Math.cos(6 * x) + a[7] * Math.cos(7 * x) + a[8] * Math.cos(8 * x) + a[9] * Math.cos(9 * x)) * scale;
+      return 0;
     };
     __f.c = function (x) {
       var t = ___.t * getElapsedSeconds();
-      return a[4] * Math.cos(4 * x) + a[6] * Math.cos(6 * x) + a[7] * Math.cos(7 * x) + a[12] * Math.cos(12 * x) + a[13] * Math.cos(13 * x);
+      return 0;
     };
   })();
 
