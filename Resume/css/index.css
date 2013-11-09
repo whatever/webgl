@@ -1,0 +1,65 @@
+body {
+  font-family: "Open Sans",_"FFDin", "Helvetica Neue", "Helvetica", sans-serif;
+  font-size: 14pt;
+}
+
+@font-face {
+}
+
+#content {
+  width: 100%;
+  background-color: rgb(.3, .3, .3);
+}
+
+#content section {
+  width: 800px;
+  margin: 0 auto;
+}
+
+#banner {
+  height: 0px;
+  background-color: black;
+  margin-bottom: 20px;
+}
+
+#subsec-name {
+  font-size: 200%;
+}
+
+#div-bg {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(.3, .3, .3, .3);
+  z-index: -9999;
+}
+
+/* SUBSECTIONS */
+.sec {
+  font-size: 100%;
+}
+.subsec {
+  font-size: 85%;
+  padding-left: 10px;
+}
+.subsec div {
+  padding-left: 10px;
+}
+
+/** FONTS **/
+@font-face {
+  font-family: DINWeb-Light;
+  src: url("/public/DINWeb-Light.eot");
+}
+@font-face {
+  font-family: DINWeb-Light;
+  src: url("/public/DINWeb-Light.woff") format("woff");
+}
+@font-face {
+  font-family: DINWeb;
+  src: url("/public/DINWeb.eot");
+}
+@font-face {
+  font-family: DINWeb;
+  src: url("/public/DINWeb.woff") format("woff");
+}
