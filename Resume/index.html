@@ -451,23 +451,27 @@
 
         <section class="subsec" id="subsec-contact-form">
           <h3>Contact Form</h3>
-          <form id="contact-form">
+          <form id="contact-form" onsubmit="pwSendEmail(); return false;">
             <table class="pw-table">
               <tr>
-                <td><label for="contact-name">Name</label></td>
-                <td><input id="contact-name" placeholder="N. Ame"></td>
+                <td><label for="contact-form-name">Name</label></td>
+                <td><input id="contact-form-name" placeholder="N. Ame"></td>
               </tr>
               <tr>
-                <td><label for="contact-website">Website</label></td>
-                <td><input id="contact-website" placeholder="http://"></td>
+                <td><label for="contact-form-email">Email</label></td>
+                <td><input id="contact-form-email" placeholder="@"></td>
               </tr>
               <tr>
-                <td><label for="contact-name">Email</label></td>
-                <td><input id="contact-name" placeholder="@"></td>
+                <td><label for="contact-form-company">Company</label></td>
+                <td><input id="contact-form-company" placeholder="Inc."></td>
               </tr>
               <tr>
-                <td><label id="contact-email">Message</label></td>
-                <td><textarea rows="15" required placeholder="..."></textarea></td>
+                <td><label for="contact-form-website">Website</label></td>
+                <td><input id="contact-form-website" placeholder="http://"></td>
+              </tr>
+              <tr>
+                <td><label for="contact-form-message">Message</label></td>
+                <td><textarea rows="15" placeholder="..." id="contact-form-message"></textarea></td>
               </tr>
               <tr>
                 <td>&nbsp;</td>
@@ -540,6 +544,45 @@
       })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
       ga('create', 'UA-45577960-1', 'razorbla.de');
       ga('send', 'pageview');
+    </script>
+    <script>
+      function pwSendEmail () {
+        $.ajax({
+          url : "sendemail.php",
+          type : "POST",
+          data : {
+            name    : $("#contact-form-name").val(),
+            email   : $("#contact-form-email").val(),
+            company : $("#contact-form-company").val(),
+            website : $("#contact-form-website").val(),
+            message : $("#contact-form-message").val()
+          },
+          success : pwOnMailSuccess,
+          error : pwOnMailError
+        });
+
+        $("#contact-form-name").val("");
+        $("#contact-form-email").val("");
+        $("#contact-form-company").val("");
+        $("#contact-form-website").val("");
+        $("#contact-form-message").val("WAITING...\nYOUR EMAIL IS BEING SENT.");
+      }
+
+      function pwOnMailSuccess(data, textStatus, jqXHR) {
+        $('#contact-form-name').val("");
+        $('#contact-form-email').val("");
+        $('#contact-form-company').val("");
+        $('#contact-form-website').val("");
+        $('#contact-form-message').val("THANK YOU!\nYOUR MESSAGE HAS BEEN SENT TO MATT.");
+        console.log(data);
+        console.log(textStatus);
+        console.log("");
+      }
+
+      function pwOnMailError (jqXHR, textStatus, errorThrown) {
+        console.log(textStatus);
+        console.log(errorThrown);
+      }
     </script>
 
   </body>
