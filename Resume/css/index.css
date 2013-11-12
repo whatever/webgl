@@ -1,0 +1,155 @@
+body {
+  font-family: "Open Sans",_"FFDin", "Helvetica Neue", "Helvetica", sans-serif;
+  font-size: 14pt;
+}
+
+a, a:link, a:visited {
+  text-decoration: none;
+  color: rgb(120, 120, 120);
+  font-weight: 600;
+}
+
+a:active, a:hover {
+  text-decoration: underline;
+  color: rgb(60, 60, 60);
+}
+
+@font-face {
+}
+
+#contact-form input,
+#contact-form textarea {
+  font-family: monospace;
+  color: rgb(80, 80, 80);
+  font-size: 10pt;
+}
+
+#contact-form input[type=submit] {
+  width: auto;
+}
+
+#contact-form input {
+  width: 250px;
+}
+
+#contact-form textarea {
+  width: 400px;
+}
+
+.bullets {
+  color: rgb(80, 80, 80);
+}
+
+.related-info {
+  color: rgb(80, 80, 80);
+  margin: 0;
+  padding: 0;
+  padding-left: 10px;
+}
+
+table.related-info td {
+  padding-bottom: 5px;
+}
+
+.subsec .role,
+.subsec .time,
+.subsec .location {
+  margin: 0;
+  padding: 0;
+  padding-top: 5px;
+  padding-bottom: 0px;
+  padding-left: 10px;
+  color: rgb(90, 90, 90);
+  letter-spacing: .04em;
+  font-size: 90%;
+}
+
+.related-info {
+  margin-left: 10px;
+  margin-top: 10px;
+  font-size: 90%;
+}
+
+.subsec .role {
+  color: rgb(30, 30, 30);
+  padding-bottom: 5px;
+  font-size: 100%;
+  letter-spacing: .06em;
+}
+
+#content {
+  width: 100%;
+}
+
+#content section {
+  width: 800px;
+  margin: 0 auto;
+}
+#final-thoughts {
+  padding-top: .3em;
+  margin-top: 1.4em;
+  background-color: rgb(33, 33, 33);
+  margin-bottom: 0;
+  padding-bottom: 0;
+  color: rgb(220, 220, 220);
+  padding-bottom: 1em;
+}
+
+#final-thoughts .subsec {
+  color: rgb(150, 150, 150);
+}
+
+#final-thoughts section {
+  width: 800px;
+  margin: 0 auto;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+#banner {
+  height: 0px;
+  background-color: black;
+  margin-bottom: 20px;
+}
+
+#subsec-name {
+  font-size: 200%;
+}
+
+#div-bg {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(.3, .3, .3, .3);
+  z-index: -9999;
+}
+
+/* SUBSECTIONS */
+.sec {
+  font-size: 100%;
+}
+.subsec {
+  font-size: 85%;
+  padding-left: 10px;
+}
+.subsec div {
+  padding-left: 10px;
+}
+
+/** FONTS **/
+@font-face {
+  font-family: DINWeb-Light;
+  src: url("/public/DINWeb-Light.eot");
+}
+@font-face {
+  font-family: DINWeb-Light;
+  src: url("/public/DINWeb-Light.woff") format("woff");
+}
+@font-face {
+  font-family: DINWeb;
+  src: url("/public/DINWeb.eot");
+}
+@font-face {
+  font-family: DINWeb;
+  src: url("/public/DINWeb.woff") format("woff");
+}

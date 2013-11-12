@@ -1,0 +1,20 @@
+@font-face {
+  font-family: FFDin;
+  src: url("../fonts/public/DINWeb-Light.eot");
+  font-weight: 200;
+}
+@font-face {
+  font-family: FFDin;
+  src: url("../fonts/DINWeb-Light.woff") format("woff");
+  font-weight: 200;
+}
+@font-face {
+  font-family: FFDin;
+  src: url("../fonts/DINWeb.eot");
+  font-weight: 400;
+}
+@font-face {
+  font-family: FFDin;
+  src: url("../fonts/DINWeb.woff") format("woff");
+  font-weight: 400;
+}
